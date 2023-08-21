@@ -51,11 +51,11 @@ android {
 }
 
 dependencies {
-
-    implementation("androidx.core:core-ktx:1.9.0")
+    implementation("androidx.core:core-ktx:1.10.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
-    implementation("androidx.activity:activity-compose:1.7.0")
+    implementation("androidx.activity:activity-compose:1.7.2")
     implementation(platform("androidx.compose:compose-bom:2023.03.00"))
+    implementation("androidx.compose.material:material")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
@@ -76,18 +76,12 @@ dependencies {
     }
     // https://mvnrepository.com/artifact/io.github.billywei01/fastkv
     implementation("io.github.billywei01:fastkv:2.1.3")
-    implementation("com.jraska:console:1.2.0")
     implementation("com.afollestad.material-dialogs:bottomsheets:3.3.0")
-    implementation("com.jraska:console-timber-tree:1.2.0")
-    implementation("androidx.core:core-ktx:1.9.0")
+    implementation("io.coil-kt:coil-compose:1.4.0")
+
     //dependency for the reCAPTCHA (safetynet)
     implementation("com.google.android.gms:play-services-safetynet:18.0.1")
-    implementation("com.afollestad.material-dialogs:input:3.3.0")
-
-
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+    implementation("com.airbnb.android:lottie:6.1.0")
 
     // Solve the conflict problem... LOL
     implementation("com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava")

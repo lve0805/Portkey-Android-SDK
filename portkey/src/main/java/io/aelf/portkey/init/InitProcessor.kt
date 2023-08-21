@@ -14,7 +14,7 @@ object InitProcessor {
         return inited
     }
 
-    fun init(config: SDkInitConfig, context: Context) {
+    internal fun init(config: SDkInitConfig, context: Context) {
         if (hasInit()) {
             GLogger.e("PortkeySDK has been initialized!")
             return

@@ -7,7 +7,7 @@ public class SDkInitConfig {
     private final ILogger logger;
     private final IStorageBehaviour storageHandler;
 
-    protected SDkInitConfig(Builder builder) {
+    public SDkInitConfig(Builder builder) {
         this.logger = builder.logger;
         this.storageHandler = builder.storageHandler;
     }
@@ -20,7 +20,11 @@ public class SDkInitConfig {
         return storageHandler;
     }
 
-    public class Builder {
+    public static class Builder {
+
+        public Builder() {
+
+        }
         private ILogger logger;
         private IStorageBehaviour storageHandler;
 

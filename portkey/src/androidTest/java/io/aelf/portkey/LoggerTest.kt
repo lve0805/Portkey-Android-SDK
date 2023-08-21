@@ -1,11 +1,14 @@
 package io.aelf.portkey
 
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.aelf.portkey.component.log.PortkeyAndroidLogger
 import io.aelf.portkey.utils.log.GLogger
 import io.aelf.utils.AElfException
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
 
+@RunWith(AndroidJUnit4::class)
 class LoggerTest {
     @Before
     fun setUp() {
