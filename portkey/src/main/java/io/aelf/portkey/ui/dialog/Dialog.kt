@@ -69,7 +69,7 @@ internal object Dialog {
     }
 
     @Composable
-    internal fun BasicDialog() {
+    internal fun Dialog() {
         if (isActive) {
             val fadeInAlpha by animateFloatAsState(
                 targetValue = if (isActive) 1f else 0f,
@@ -202,7 +202,7 @@ fun PreviewDialog() {
             }
         }
     }
-    Dialog.BasicDialog()
+    Dialog.Dialog()
     PortkeyAsyncCaller.asyncCall {
         Thread.sleep(200)
         Dialog.show(dialogProps)

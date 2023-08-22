@@ -6,10 +6,12 @@ import io.aelf.portkey.utils.log.ILogger;
 public class SDkInitConfig {
     private final ILogger logger;
     private final IStorageBehaviour storageHandler;
+    private final boolean useOutsideComposeStub;
 
     public SDkInitConfig(Builder builder) {
         this.logger = builder.logger;
         this.storageHandler = builder.storageHandler;
+        this.useOutsideComposeStub = builder.useOutsideComposeStub;
     }
 
     public ILogger getLogger() {
@@ -20,13 +22,18 @@ public class SDkInitConfig {
         return storageHandler;
     }
 
-    public static class Builder {
+    public boolean isUseOutsideComposeStub() {
+        return useOutsideComposeStub;
+    }
 
+    public static class Builder {
         public Builder() {
 
         }
         private ILogger logger;
         private IStorageBehaviour storageHandler;
+        public boolean useOutsideComposeStub;
+
 
         public Builder setLogger(ILogger logger) {
             this.logger = logger;
@@ -35,6 +42,11 @@ public class SDkInitConfig {
 
         public Builder setStorageHandler(IStorageBehaviour storageHandler) {
             this.storageHandler = storageHandler;
+            return this;
+        }
+
+        public Builder setUseOutsideComposeStub(boolean useOutsideComposeStub) {
+            this.useOutsideComposeStub = useOutsideComposeStub;
             return this;
         }
 

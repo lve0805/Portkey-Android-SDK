@@ -54,8 +54,8 @@ const val DEFAULT_LOADING_TEXT = "Loading..."
 internal object Loading {
     internal val loadingState = LoadingState()
     private val lottieStyle = Style().apply {
-        width = 43.dp
-        height = 30.dp
+        width = 44.dp
+        height = 44.dp
     }
 
     @Composable
@@ -117,7 +117,7 @@ internal object Loading {
     }
 
     @Composable
-    internal fun LoadingModalComponent() {
+    internal fun Loading() {
         if (loadingState.isShow) {
             val fadeInAlpha by animateFloatAsState(
                 targetValue = if (loadingState.isShow) 1f else 0f,
@@ -154,7 +154,7 @@ internal fun LoadingComponentPreview() {
         InitProcessor.init(SDkInitConfig.Builder().build(), context)
     }
     val scope = rememberCoroutineScope()
-    Loading.LoadingModalComponent()
+    Loading.Loading()
     Row {
         TextButton(onClick = {
             scope.launch {

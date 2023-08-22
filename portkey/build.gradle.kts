@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "io.aelf.portkey"
-    compileSdk = 33
+    compileSdk = 34
 
     packagingOptions.resources.excludes.add("META-INF/DEPENDENCIES")
     packagingOptions.resources.excludes.add("META-INF/LICENSE")
@@ -67,6 +67,7 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+    implementation("io.github.oleksandrbalan:modalsheet:0.6.0")
 
     implementation("io.aelf:portkey-java-sdk:0.0.7-SNAPSHOT") {
         isChanging = true

@@ -6,7 +6,7 @@ import androidx.compose.ui.platform.LocalContext
 
 object Toast {
     @Composable
-    fun showToast(text: String) {
+    fun Toast(text: String) {
         val context = LocalContext.current
         android.widget.Toast.makeText(
             context,
