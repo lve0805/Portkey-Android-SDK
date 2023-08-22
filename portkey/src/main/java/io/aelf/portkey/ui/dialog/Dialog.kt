@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -33,7 +34,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.aelf.portkey.async.PortkeyAsyncCaller
+import io.aelf.portkey.init.InitProcessor
+import io.aelf.portkey.init.SDkInitConfig
+import io.aelf.portkey.tools.friendly.UseComponentDidMount
+import io.aelf.portkey.ui.basic.Toast.showToast
 import io.aelf.portkey.ui.basic.wrapperStyle
+import io.aelf.portkey.ui.button.ButtonConfig
+import io.aelf.portkey.ui.button.MediumButton
 import io.aelf.portkey.utils.log.GLogger
 
 
@@ -47,6 +54,12 @@ internal object Dialog {
     }
 
     internal fun show(dialogProps: DialogProps) {
+        if (isBusy()) {
+            GLogger.e(
+                "Dialog is busy, and we have to override your last operation," +
+                        " better check it by isBusy() first."
+            )
+        }
         this.dialogProps = dialogProps
         isActive = true
     }
@@ -79,13 +92,14 @@ internal object Dialog {
 
     @Composable
     private fun DialogBody() {
-        Box(
+        Column(
             modifier = Modifier
                 .width(wrapperStyle.width)
                 .wrapContentHeight(Alignment.CenterVertically)
                 .clip(RoundedCornerShape(8.dp))
                 .background(Color.White),
-            contentAlignment = Alignment.Center
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
             Column(
                 modifier = Modifier
@@ -123,16 +137,39 @@ internal object Dialog {
                     overflow = TextOverflow.Ellipsis
                 )
             }
+            Buttons()
         }
     }
 
     @Composable
-    private fun Buttons(){
-        Row (
-            modifier = Modifier.width(288.dp),
+    private fun Buttons() {
+        Row(
+            modifier = Modifier
+                .width(288.dp)
+                .wrapContentHeight(Alignment.CenterVertically)
+                .background(Color.White)
+                .padding(
+                    top = 0.dp,
+                    bottom = 24.dp
+                ),
             horizontalArrangement = Arrangement.SpaceBetween
-        ){
-
+        ) {
+            MediumButton(config = ButtonConfig().apply {
+                text = dialogProps.negativeText
+                onClick = {
+                    hide()
+                    dialogProps.negativeCallback()
+                }
+                bgColor = Color.White
+                textColor = Color(0xFF414852)
+            })
+            MediumButton(config = ButtonConfig().apply {
+                text = dialogProps.positiveText
+                onClick = {
+                    hide()
+                    dialogProps.positiveCallback()
+                }
+            })
         }
     }
 
@@ -151,13 +188,17 @@ open class DialogProps {
 @Preview
 @Composable
 fun PreviewDialog() {
+    val context = LocalContext.current
+    UseComponentDidMount {
+        InitProcessor.init(SDkInitConfig.Builder().build(), context)
+    }
     val dialogProps = remember {
         DialogProps().apply {
             positiveCallback = {
-                GLogger.e("positiveCallback")
+                showToast(context, "positiveCallback")
             }
             negativeCallback = {
-                GLogger.e("negativeCallback")
+                showToast(context, "negativeCallback")
             }
         }
     }

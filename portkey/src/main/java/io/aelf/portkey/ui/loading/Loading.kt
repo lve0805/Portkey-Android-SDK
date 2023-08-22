@@ -49,7 +49,7 @@ import io.aelf.portkey.ui.loading.Loading.loadingState
 import io.aelf.portkey.utils.log.GLogger
 import kotlinx.coroutines.launch
 
-const val DEFAULT_LOADING_TEXT = "Working..."
+const val DEFAULT_LOADING_TEXT = "Loading..."
 
 internal object Loading {
     internal val loadingState = LoadingState()
@@ -72,8 +72,7 @@ internal object Loading {
                 )
                 .background(Color.White)
                 .width(wrapperStyle.width)
-                .height(wrapperStyle.height)
-                .padding(20.dp),
+                .height(wrapperStyle.height),
             verticalArrangement = Arrangement.Center
         ) {
             LottieAnimationComponent(animationRes = animationRes, style = lottieStyle)

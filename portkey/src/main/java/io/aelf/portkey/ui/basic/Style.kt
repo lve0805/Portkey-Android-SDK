@@ -24,7 +24,7 @@ open class Style {
 
 internal val wrapperStyle = Style().apply {
     width = 320.dp
-    height = 200.dp
+    height = 136.dp
 }
 
 internal fun isValid(num: Dp): Boolean {
