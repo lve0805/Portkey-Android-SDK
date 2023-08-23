@@ -39,6 +39,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
 import com.airbnb.lottie.LottieAnimationView
 import io.aelf.portkey.R
+import io.aelf.portkey.async.PortkeyAsyncCaller
 import io.aelf.portkey.init.InitProcessor
 import io.aelf.portkey.init.SDkInitConfig
 import io.aelf.portkey.tools.friendly.UseComponentDidMount
@@ -115,9 +116,12 @@ internal object Loading {
         loadingState.loadingText = text
     }
 
-    internal fun hideLoading() {
-        loadingState.isShow = false
-        loadingState.loadingText = DEFAULT_LOADING_TEXT
+    internal fun hideLoading(duration: Long = 0L) {
+        PortkeyAsyncCaller.asyncCall {
+            Thread.sleep(duration)
+            loadingState.isShow = false
+            loadingState.loadingText = DEFAULT_LOADING_TEXT
+        }
     }
 
     internal suspend fun hideLoadingCoroutine(coroutineScope: CoroutineScope, duration: Long = 0L) {

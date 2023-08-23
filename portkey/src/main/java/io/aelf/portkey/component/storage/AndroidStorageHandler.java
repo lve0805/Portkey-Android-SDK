@@ -1,5 +1,7 @@
 package io.aelf.portkey.component.storage;
 
+import static io.aelf.portkey.component.global.NullableTools.stringOrDefault;
+
 import android.content.Context;
 
 import org.apache.http.util.TextUtils;
@@ -14,8 +16,6 @@ import io.aelf.portkey.utils.log.GLogger;
 import io.aelf.utils.AElfException;
 import io.fastkv.FastKV;
 import io.fastkv.interfaces.FastCipher;
-
-import static io.aelf.portkey.component.global.NullableTools.stringOrDefault;
 
 public class AndroidStorageHandler implements IStorageBehaviour {
     private final FastKV kvProvider;

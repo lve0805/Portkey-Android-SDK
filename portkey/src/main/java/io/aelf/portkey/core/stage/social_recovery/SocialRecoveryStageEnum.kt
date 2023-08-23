@@ -3,8 +3,6 @@ package io.aelf.portkey.core.stage.social_recovery
 enum class SocialRecoveryStageEnum {
     // Initial state, or have just logout
     INIT,
-    // User has entered the login identification
-    ENTERED,
     // Did not detect the existing account, ready to register
     READY_TO_REGISTER,
     // This account has been registered, ready to login

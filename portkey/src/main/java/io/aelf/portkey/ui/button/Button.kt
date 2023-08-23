@@ -1,6 +1,7 @@
 package io.aelf.portkey.ui.button
 
 import android.widget.Toast
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,12 +25,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.aelf.portkey.tools.friendly.DynamicWidth
+import io.aelf.portkey.component.global.NullableTools.dpOrDefault
 
 @Composable
 fun HugeButton(config: ButtonConfig, enable: Boolean = true) {
     Button(config.apply {
         height = 50.dp
-        width = 320.dp
+        width = dpOrDefault(DynamicWidth(20), 320.dp)
     }, enable)
 }
 
@@ -60,9 +63,8 @@ private fun Button(config: ButtonConfig, enable: Boolean) {
             .height(config.height)
             .width(config.width),
         colors = ButtonDefaults.textButtonColors(
-            contentColor = config.bgColor,
             containerColor = config.bgColor,
-            disabledContentColor = Color(0xFF8F949C)
+            disabledContainerColor = Color(0xFF8F949C).copy(alpha = 0.1F)
         ),
         border = BorderStroke(config.borderWidth, config.borderColor),
         shape = RoundedCornerShape(8.dp)
@@ -81,7 +83,7 @@ private fun Button(config: ButtonConfig, enable: Boolean) {
         Text(
             text = config.text,
             style = TextStyle(
-                color = config.textColor,
+                color = if (enable) config.textColor else Color(0xFF8F949C),
                 fontSize = config.fontSize,
                 fontWeight = FontWeight(config.fontWeight),
                 lineHeight = config.lineHeight
@@ -93,6 +95,7 @@ private fun Button(config: ButtonConfig, enable: Boolean) {
 
 open class ButtonConfig {
     var text: String = "Yes"
+    @DrawableRes
     var iconPath: Int = -1
     var iconSize: Int = 0
     var bgColor: Color = Color(0xFF4285F4)

@@ -79,12 +79,13 @@ android {
 
 dependencies {
 
-    implementation("androidx.core:core-ktx:1.9.0")
+    implementation("androidx.core:core-ktx:1.10.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
-    implementation("androidx.activity:activity-compose:1.7.0")
+    implementation("androidx.activity:activity-compose:1.7.2")
     implementation(platform("androidx.compose:compose-bom:2023.03.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     testImplementation("junit:junit:4.13.2")
@@ -106,7 +107,6 @@ dependencies {
     implementation("com.jraska:console:1.2.0")
     implementation("com.afollestad.material-dialogs:bottomsheets:3.3.0")
     implementation("com.jraska:console-timber-tree:1.2.0")
-    implementation("androidx.core:core-ktx:1.9.0")
     //dependency for the reCAPTCHA (safetynet)
     implementation("com.google.android.gms:play-services-safetynet:18.0.1")
     implementation("com.afollestad.material-dialogs:input:3.3.0")

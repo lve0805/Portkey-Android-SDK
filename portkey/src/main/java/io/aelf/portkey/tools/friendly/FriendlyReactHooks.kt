@@ -1,5 +1,7 @@
 package io.aelf.portkey.tools.friendly
 
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -15,7 +17,7 @@ fun UseComponentDidMount(callback: () -> Unit) {
 }
 
 @Composable
-fun UseEffect(vararg dependency: Any, callback: () -> Unit) {
+fun UseEffect(vararg dependency: Any?, callback: () -> Unit) {
     val den: Any = if (dependency.isEmpty()) Unit else dependency
     LaunchedEffect(den) {
         callback()
@@ -29,6 +31,24 @@ fun UseComponentWillUnmount(callback: () -> Unit) {
             callback()
         }
     }
+}
+
+@Composable
+fun UseAndroidBackButtonSettings(callback: () -> Unit) {
+    val callback = remember {
+        return@remember object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                callback()
+            }
+        }
+    }
+    val dispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+    DisposableEffect(key1 = Unit, effect = {
+        dispatcher?.addCallback(callback)
+        onDispose {
+            callback.remove()
+        }
+    })
 }
 
 @Composable

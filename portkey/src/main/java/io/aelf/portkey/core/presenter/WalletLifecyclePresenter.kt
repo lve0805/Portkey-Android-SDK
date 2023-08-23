@@ -21,6 +21,26 @@ internal object WalletLifecyclePresenter {
     internal var setPin: SetPinBehaviourEntity? by mutableStateOf(null)
     internal var wallet: PortkeyWallet? by mutableStateOf(null)
 
+    internal var stageEnum by mutableStateOf(SocialRecoveryStageEnum.INIT)
+
+    internal fun inferCurrentStage() {
+        if (wallet != null) {
+            stageEnum = SocialRecoveryStageEnum.ACTIVE
+            return
+        } else if (setPin != null) {
+            stageEnum = SocialRecoveryStageEnum.SET_PIN
+            return
+        } else {
+            stageEnum = if (login != null) {
+                if (login!!.isFulfilled) SocialRecoveryStageEnum.LOGIN_GUARDIAN_FULFILLED else SocialRecoveryStageEnum.READY_TO_LOGIN
+            } else if (register != null) {
+                if (register!!.isVerified) SocialRecoveryStageEnum.REGISTER_GUARDIAN_FULFILLED else SocialRecoveryStageEnum.READY_TO_REGISTER
+            } else {
+                SocialRecoveryStageEnum.INIT
+            }
+        }
+    }
+
     internal object SpecialStageIdentifier {
         internal var CHOSE_TO_INPUT_EMAIL by mutableStateOf(false)
 
@@ -30,9 +50,6 @@ internal object WalletLifecyclePresenter {
     }
 
     internal const val PIN_LENGTH = 6
-
-    internal var stageEnum by mutableStateOf(SocialRecoveryStageEnum.INIT)
-
     internal fun reset() {
         entry = null
         login = null
@@ -44,32 +61,6 @@ internal object WalletLifecyclePresenter {
         inferCurrentStage()
     }
 
-    internal fun getStage(): SocialRecoveryStageEnum {
-        inferCurrentStage()
-        return stageEnum
-    }
-
-    private fun inferCurrentStage() {
-        if (wallet != null) {
-            stageEnum = SocialRecoveryStageEnum.ACTIVE
-            return
-        } else if (setPin != null) {
-            stageEnum = SocialRecoveryStageEnum.SET_PIN
-            return
-        } else if (entry == null) {
-            stageEnum = SocialRecoveryStageEnum.INIT
-            return
-        } else {
-            if (login != null) {
-                stageEnum =
-                    if (login!!.isFulfilled) SocialRecoveryStageEnum.LOGIN_GUARDIAN_FULFILLED else SocialRecoveryStageEnum.READY_TO_LOGIN
-            } else if (register != null) {
-                stageEnum =
-                    if (register!!.isVerified) SocialRecoveryStageEnum.REGISTER_GUARDIAN_FULFILLED else SocialRecoveryStageEnum.READY_TO_REGISTER
-            }
-        }
-        stageEnum = SocialRecoveryStageEnum.ENTERED
-    }
 
     internal fun detectCachedWallet(): Boolean {
         return EntryBehaviourEntity.ifLockedWalletExists()

@@ -36,19 +36,21 @@ import io.aelf.portkey.R
 import io.aelf.portkey.core.presenter.WalletLifecyclePresenter
 import io.aelf.portkey.core.stage.social_recovery.SocialRecoveryStageEnum
 import io.aelf.portkey.debug.initDebug
-import io.aelf.portkey.entity.social_recovery.stage.EntryBody
+import io.aelf.portkey.entity.social_recovery.stage.EntryPage
+import io.aelf.portkey.entity.social_recovery.stage.RegisterPage
 import io.aelf.portkey.entity.social_recovery.static.PortkeyFootage
-import io.aelf.portkey.init.InitProcessor
-import io.aelf.portkey.init.SDkInitConfig
+import io.aelf.portkey.tools.friendly.UseAndroidBackButtonSettings
 import io.aelf.portkey.tools.friendly.UseComponentDidMount
+import io.aelf.portkey.tools.friendly.UseComponentWillUnmount
+import io.aelf.portkey.tools.friendly.UseEffect
 import io.aelf.portkey.ui.basic.ZIndexConfig
 import io.aelf.portkey.ui.button.ButtonConfig
 import io.aelf.portkey.ui.button.HugeButton
 import io.aelf.portkey.ui.dialog.Dialog
 import io.aelf.portkey.ui.dialog.Dialog.PortkeyDialog
 import io.aelf.portkey.ui.dialog.DialogProps
-import io.aelf.portkey.ui.loading.Loading
 import io.aelf.portkey.ui.loading.Loading.PortkeyLoading
+import io.aelf.portkey.utils.log.GLogger
 import io.aelf.utils.AElfException
 
 internal object SocialRecoveryModal : ModalController {
@@ -95,6 +97,17 @@ internal object SocialRecoveryModal : ModalController {
             label = "modal bgColor"
         )
         if (isShow) {
+            UseEffect(
+                WalletLifecyclePresenter.wallet,
+                WalletLifecyclePresenter.entry,
+                WalletLifecyclePresenter.login,
+                WalletLifecyclePresenter.register,
+                WalletLifecyclePresenter.activeGuardian,
+                WalletLifecyclePresenter.setPin
+            ) {
+                WalletLifecyclePresenter.inferCurrentStage()
+            }
+            UseAndroidBackButtonSettings(::closeModal)
             Column(
                 modifier = Modifier
                     .zIndex(ZIndexConfig.Modal.getZIndex())
@@ -104,6 +117,9 @@ internal object SocialRecoveryModal : ModalController {
                 verticalArrangement = Arrangement.Bottom
             ) {
                 ModalBody()
+            }
+            UseComponentWillUnmount {
+                WalletLifecyclePresenter.reset()
             }
         }
     }
@@ -144,11 +160,14 @@ internal object SocialRecoveryModal : ModalController {
         ) {
             when (WalletLifecyclePresenter.stageEnum) {
                 SocialRecoveryStageEnum.INIT,
-                SocialRecoveryStageEnum.READY_TO_LOGIN,
-                SocialRecoveryStageEnum.READY_TO_REGISTER
                 -> {
-                    // Starter
-                    EntryBody()
+                    // Starter page
+                    EntryPage()
+                }
+
+                SocialRecoveryStageEnum.READY_TO_REGISTER -> {
+                    // Go to register page
+                    RegisterPage()
                 }
 
                 else -> {}
@@ -226,7 +245,17 @@ fun ModalPreview() {
         initDebug(context)
     }
     var props = remember {
-        SocialRecoveryModalProps()
+        SocialRecoveryModalProps().apply {
+            onUserCancel = {
+                GLogger.w("onUserCancel")
+            }
+            onSuccess = {
+                println("onSuccess")
+            }
+            onError = {
+                GLogger.e("onError", it)
+            }
+        }
     }
     SocialRecoveryModal.callUpModal(props)
     HugeButton(
