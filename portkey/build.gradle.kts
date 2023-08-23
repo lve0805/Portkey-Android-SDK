@@ -68,6 +68,8 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     implementation("io.github.oleksandrbalan:modalsheet:0.6.0")
+    implementation ("org.jetbrains.kotlin:kotlin-reflect")
+
 
     implementation("io.aelf:portkey-java-sdk:0.0.7-SNAPSHOT") {
         isChanging = true

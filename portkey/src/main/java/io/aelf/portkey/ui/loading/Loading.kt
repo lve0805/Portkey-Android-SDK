@@ -36,6 +36,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.zIndex
 import com.airbnb.lottie.LottieAnimationView
 import io.aelf.portkey.R
 import io.aelf.portkey.init.InitProcessor
@@ -44,9 +45,12 @@ import io.aelf.portkey.tools.friendly.UseComponentDidMount
 import io.aelf.portkey.tools.friendly.UseComponentWillUnmount
 import io.aelf.portkey.tools.friendly.UseEffect
 import io.aelf.portkey.ui.basic.Style
+import io.aelf.portkey.ui.basic.ZIndexConfig
 import io.aelf.portkey.ui.basic.wrapperStyle
 import io.aelf.portkey.ui.loading.Loading.loadingState
 import io.aelf.portkey.utils.log.GLogger
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 const val DEFAULT_LOADING_TEXT = "Loading..."
@@ -116,8 +120,15 @@ internal object Loading {
         loadingState.loadingText = DEFAULT_LOADING_TEXT
     }
 
+    internal suspend fun hideLoadingCoroutine(coroutineScope: CoroutineScope, duration: Long = 0L) {
+        coroutineScope.launch {
+            delay(duration)
+            hideLoading()
+        }
+    }
+
     @Composable
-    internal fun Loading() {
+    internal fun PortkeyLoading() {
         if (loadingState.isShow) {
             val fadeInAlpha by animateFloatAsState(
                 targetValue = if (loadingState.isShow) 1f else 0f,
@@ -128,6 +139,7 @@ internal object Loading {
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color.Black.copy(alpha = 0.5f))
+                    .zIndex(ZIndexConfig.Loading.getZIndex())
                     .pointerInput(Unit) { }
                     .alpha(fadeInAlpha),
                 contentAlignment = Alignment.Center
@@ -154,7 +166,7 @@ internal fun LoadingComponentPreview() {
         InitProcessor.init(SDkInitConfig.Builder().build(), context)
     }
     val scope = rememberCoroutineScope()
-    Loading.Loading()
+    Loading.PortkeyLoading()
     Row {
         TextButton(onClick = {
             scope.launch {

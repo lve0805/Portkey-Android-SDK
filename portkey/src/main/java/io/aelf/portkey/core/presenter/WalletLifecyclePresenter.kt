@@ -21,6 +21,14 @@ internal object WalletLifecyclePresenter {
     internal var setPin: SetPinBehaviourEntity? by mutableStateOf(null)
     internal var wallet: PortkeyWallet? by mutableStateOf(null)
 
+    internal object SpecialStageIdentifier {
+        internal var CHOSE_TO_INPUT_EMAIL by mutableStateOf(false)
+
+        internal fun reset() {
+            CHOSE_TO_INPUT_EMAIL = false
+        }
+    }
+
     internal const val PIN_LENGTH = 6
 
     internal var stageEnum by mutableStateOf(SocialRecoveryStageEnum.INIT)
@@ -32,6 +40,7 @@ internal object WalletLifecyclePresenter {
         activeGuardian = null
         setPin = null
         wallet = null
+        SpecialStageIdentifier.reset()
         inferCurrentStage()
     }
 

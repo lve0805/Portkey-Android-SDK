@@ -33,11 +33,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import io.aelf.portkey.async.PortkeyAsyncCaller
 import io.aelf.portkey.init.InitProcessor
 import io.aelf.portkey.init.SDkInitConfig
 import io.aelf.portkey.tools.friendly.UseComponentDidMount
 import io.aelf.portkey.ui.basic.Toast.showToast
+import io.aelf.portkey.ui.basic.ZIndexConfig
 import io.aelf.portkey.ui.basic.wrapperStyle
 import io.aelf.portkey.ui.button.ButtonConfig
 import io.aelf.portkey.ui.button.MediumButton
@@ -69,7 +71,7 @@ internal object Dialog {
     }
 
     @Composable
-    internal fun Dialog() {
+    internal fun PortkeyDialog() {
         if (isActive) {
             val fadeInAlpha by animateFloatAsState(
                 targetValue = if (isActive) 1f else 0f,
@@ -81,6 +83,7 @@ internal object Dialog {
                     .fillMaxSize()
                     .background(Color.Black.copy(alpha = 0.5f))
                     .pointerInput(Unit) { }
+                    .zIndex(ZIndexConfig.Dialog.getZIndex())
                     .alpha(fadeInAlpha),
                 contentAlignment = Alignment.Center
             ) {
@@ -202,7 +205,7 @@ fun PreviewDialog() {
             }
         }
     }
-    Dialog.Dialog()
+    Dialog.PortkeyDialog()
     PortkeyAsyncCaller.asyncCall {
         Thread.sleep(200)
         Dialog.show(dialogProps)

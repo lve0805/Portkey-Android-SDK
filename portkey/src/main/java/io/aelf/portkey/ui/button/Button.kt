@@ -26,39 +26,39 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun HugeButton(config: ButtonConfig) {
+fun HugeButton(config: ButtonConfig, enable: Boolean = true) {
     Button(config.apply {
         height = 50.dp
         width = 320.dp
-    })
+    }, enable)
 }
 
 @Composable
-fun MediumButton(config: ButtonConfig) {
+fun MediumButton(config: ButtonConfig, enable: Boolean = true) {
     Button(config.apply {
         height = 44.dp
         width = 140.dp
-    })
+    }, enable)
 }
 
 @Composable
-fun TinyButton(config: ButtonConfig) {
+fun TinyButton(config: ButtonConfig, enable: Boolean = true) {
     Button(config.apply {
         height = 38.dp
         width = 62.dp
         fontSize = 12.sp
         lineHeight = 22.sp
-    })
+    }, enable)
 }
 
 @Composable
-private fun Button(config: ButtonConfig) {
+private fun Button(config: ButtonConfig, enable: Boolean) {
     TextButton(
+        enabled = enable,
         onClick = config.onClick,
         modifier = Modifier
             .height(config.height)
-            .width(config.width)
-        ,
+            .width(config.width),
         colors = ButtonDefaults.textButtonColors(
             contentColor = config.bgColor,
             containerColor = config.bgColor,

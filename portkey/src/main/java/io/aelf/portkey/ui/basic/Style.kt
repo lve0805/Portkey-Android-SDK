@@ -34,3 +34,12 @@ internal fun isValid(num: Dp): Boolean {
 internal fun isValid(str: String?): Boolean {
     return !str.isNullOrEmpty()
 }
+
+enum class ZIndexConfig(val z: Float) {
+    Loading(100f),
+    Dialog(50f),
+    Modal(10f);
+    internal fun getZIndex(): Float {
+        return z
+    }
+}

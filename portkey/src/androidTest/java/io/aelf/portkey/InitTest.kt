@@ -28,7 +28,7 @@ class InitTest {
     @Test
     fun test() {
         assert(InitProcessor.hasInit())
-        val handler:IStorageBehaviour = StorageProvider.getHandler()!!
+        val handler: IStorageBehaviour = StorageProvider.getHandler()!!
         handler.putValue("test", "test")
         assert(handler.getValue("test") == "test")
         GLogger.i("test")

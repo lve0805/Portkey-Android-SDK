@@ -11,4 +11,10 @@ public class NullableTools {
         return !TextUtils.isEmpty(inputStr) ? inputStr : defaultStr;
     }
 
+    public static int intOrDefault(int inputInt, int aboveZeroValue) {
+        if (aboveZeroValue <= 0)
+            throw new IllegalArgumentException("aboveZeroValue must be above zero");
+        return inputInt > 0 ? inputInt : aboveZeroValue;
+    }
+
 }
