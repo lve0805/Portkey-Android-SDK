@@ -21,6 +21,9 @@ object GoogleRecaptchaService {
                 .addOnFailureListener { e ->
                     GLogger.e("GoogleRecaptchaService failed!", AElfException(e))
                     callback?.onGoogleRecaptchaFailed()
+                }.addOnCanceledListener {
+                    GLogger.w("User Cancelled reCaptcha service.")
+                    callback?.onUserCancelled()
                 }
         }
     }
@@ -28,6 +31,7 @@ object GoogleRecaptchaService {
     interface GoogleRecaptchaCallback {
         fun onGoogleRecaptchaSuccess(token: String?)
         fun onGoogleRecaptchaFailed()
+        fun onUserCancelled()
     }
 
 }

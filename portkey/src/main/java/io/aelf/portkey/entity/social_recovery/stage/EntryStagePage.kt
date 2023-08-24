@@ -52,6 +52,8 @@ import io.aelf.portkey.ui.button.HugeButton
 import io.aelf.portkey.ui.dialog.Dialog
 import io.aelf.portkey.ui.dialog.DialogProps
 import io.aelf.portkey.ui.loading.Loading
+import io.aelf.portkey.utils.log.GLogger
+import io.aelf.utils.AElfException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -161,9 +163,27 @@ private suspend fun emailCheck(email: String, scope: CoroutineScope, context: Co
                     "This account has not been registered yet. Click \"Confirm\" to complete the registration."
                 positiveCallback = {
                     entry.asRegisterChain().onRegisterStep {
-                        WalletLifecyclePresenter.register = it
-
-                        leavesEntryPage()
+                        scope.launch(Dispatchers.IO) {
+                            Loading.showLoading("Checking on-chain data...")
+                            try {
+                                WalletLifecyclePresenter.activeGuardian = it.guardian
+                            } catch (e: Throwable) {
+                                GLogger.e(
+                                    "error when checking register guardian info.",
+                                    AElfException(e)
+                                )
+                            }
+                            Loading.hideLoading()
+                            if (WalletLifecyclePresenter.activeGuardian == null) {
+                                showToast(
+                                    context,
+                                    "Sorry but the sever was not responding, please try again later."
+                                )
+                            }else{
+                                WalletLifecyclePresenter.register = it
+                            }
+                            leavesEntryPage()
+                        }
                     }
                 }
             })
@@ -259,10 +279,10 @@ internal fun leavesEntryPage() {
     SocialRecoveryModal.setBackProcess(
         function = {
             Dialog.show(DialogProps().apply {
-                mainTitle = "Are you sure to leave?"
-                subTitle = "If you leave, you will lose all the progress and have to start over."
+                mainTitle = "Are you sure to go back?"
+                subTitle =
+                    "If you leave current page, you will lose all the progress and have to start over."
                 positiveCallback = {
-                    SocialRecoveryModal.closeModal()
                     WalletLifecyclePresenter.reset()
                     WalletLifecyclePresenter.inferCurrentStage()
                 }

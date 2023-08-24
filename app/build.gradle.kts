@@ -13,7 +13,7 @@ configurations.all { // check for updates every build
 
 android {
     namespace = "io.aelf.portkey"
-    compileSdk = 33
+    compileSdk = 34
 
     packagingOptions.resources.excludes.add("META-INF/DEPENDENCIES")
     packagingOptions.resources.excludes.add("META-INF/LICENSE")
@@ -34,7 +34,7 @@ android {
     defaultConfig {
         applicationId = "io.aelf.portkey"
         minSdk = 26
-        targetSdk = 33
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
         ndk {
@@ -54,6 +54,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        getByName("debug") {
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
@@ -88,6 +91,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    implementation(project(mapOf("path" to ":portkey")))
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")

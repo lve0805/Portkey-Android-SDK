@@ -76,6 +76,12 @@ internal object SocialRecoveryModal : ModalController {
         })
     }
 
+    internal fun forceCloseModal(exception: AElfException) {
+        isShow = false
+        WalletLifecyclePresenter.reset()
+        modalProps.onError?.let { it(exception) }
+    }
+
     override fun setBackProcess(goWithCleanItself: Boolean, function: () -> Unit) {
         backFunction = {
             function()

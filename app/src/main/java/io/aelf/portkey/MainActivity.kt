@@ -12,36 +12,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.afollestad.materialdialogs.ModalDialog
+import io.aelf.portkey.component.stub.PortkeySDKViewStub
 import io.aelf.portkey.demo.ui.theme.PortkeyAndroidSDKTheme
+import io.aelf.portkey.entity.social_recovery.ModalPreview
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            PortkeyAndroidSDKTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    Greeting("Android")
-                }
-            }
+            ModalPreview()
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Column {
-
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    PortkeyAndroidSDKTheme {
-        Greeting("Android")
     }
 }
