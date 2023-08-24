@@ -31,11 +31,16 @@ internal fun HugeTitle(text: String) {
 }
 
 @Composable
-internal fun ErrorMsg(text: String, paddingBottom: Int = 0, paddingTop: Int = 0) {
+internal fun ErrorMsg(
+    text: String,
+    paddingBottom: Int = 0,
+    paddingTop: Int = 0,
+    alignToCenter: Boolean = false
+) {
     Row(
         modifier = Modifier
             .width(DynamicWidth(20)),
-        horizontalArrangement = Arrangement.Start,
+        horizontalArrangement = if (alignToCenter) Arrangement.Center else Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(

@@ -1,4 +1,4 @@
-package io.aelf.portkey.entity.social_recovery.static
+package io.aelf.portkey.entity.static.footage
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row

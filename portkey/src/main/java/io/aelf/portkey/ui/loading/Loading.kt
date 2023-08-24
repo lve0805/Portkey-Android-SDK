@@ -42,6 +42,7 @@ import io.aelf.portkey.R
 import io.aelf.portkey.async.PortkeyAsyncCaller
 import io.aelf.portkey.init.InitProcessor
 import io.aelf.portkey.init.SDkInitConfig
+import io.aelf.portkey.tools.friendly.DynamicWidth
 import io.aelf.portkey.tools.friendly.UseComponentDidMount
 import io.aelf.portkey.tools.friendly.UseComponentWillUnmount
 import io.aelf.portkey.tools.friendly.UseEffect
@@ -50,8 +51,6 @@ import io.aelf.portkey.ui.basic.ZIndexConfig
 import io.aelf.portkey.ui.basic.wrapperStyle
 import io.aelf.portkey.ui.loading.Loading.loadingState
 import io.aelf.portkey.utils.log.GLogger
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 const val DEFAULT_LOADING_TEXT = "Loading..."
@@ -88,9 +87,11 @@ internal object Loading {
                     fontWeight = FontWeight(400)
                 ),
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(vertical = 8.dp),
+                modifier = Modifier
+                    .padding(vertical = 8.dp)
+                    .width(DynamicWidth(paddingHorizontal = 20)),
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -121,13 +122,6 @@ internal object Loading {
             Thread.sleep(duration)
             loadingState.isShow = false
             loadingState.loadingText = DEFAULT_LOADING_TEXT
-        }
-    }
-
-    internal suspend fun hideLoadingCoroutine(coroutineScope: CoroutineScope, duration: Long = 0L) {
-        coroutineScope.launch {
-            delay(duration)
-            hideLoading()
         }
     }
 
@@ -164,7 +158,7 @@ internal class LoadingState {
 
 @Preview
 @Composable
-internal fun LoadingComponentPreview() {
+private fun LoadingComponentPreview() {
     val context = LocalContext.current
     UseComponentDidMount {
         InitProcessor.init(SDkInitConfig.Builder().build(), context)

@@ -26,7 +26,7 @@ public class AndroidStorageHandler implements IStorageBehaviour {
 
     public AndroidStorageHandler(Context context, @Nullable String bucketName, @Nullable FastCipher cipher) {
         FastKV.Builder builder = new FastKV.Builder(
-                context, stringOrDefault(bucketName, GlobalConfig.URL_SYMBOL_PORTKEY)
+                context, stringOrDefault(bucketName, GlobalConfig.NAME_PORTKEY_SDK)
         );
         if (cipher != null) {
             builder.cipher(cipher);

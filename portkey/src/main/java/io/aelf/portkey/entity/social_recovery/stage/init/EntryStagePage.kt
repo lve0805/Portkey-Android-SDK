@@ -1,4 +1,4 @@
-package io.aelf.portkey.entity.social_recovery.stage
+package io.aelf.portkey.entity.social_recovery.stage.init
 
 import android.content.Context
 import android.text.TextUtils
@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
@@ -27,11 +29,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -69,12 +75,14 @@ internal fun EntryPage() {
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun InputEmailPage() {
     var email by remember { mutableStateOf("") }
     var errorMsg by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val keyboard = LocalSoftwareKeyboardController.current
     var commitButtonEnable by remember {
         mutableStateOf(false)
     }
@@ -111,8 +119,19 @@ private fun InputEmailPage() {
             modifier = Modifier
                 .padding(top = 40.dp)
                 .width(DynamicWidth(20))
-                .border(width = 1.dp, color = Color(0xFFEDEFF5)),
+                .border(width = 1.dp, color = Color(0xFFEDEFF5), shape = RoundedCornerShape(8.dp)),
             shape = RoundedCornerShape(8.dp),
+            keyboardOptions = KeyboardOptions.Default.copy(
+                imeAction = ImeAction.Done,
+                keyboardType = KeyboardType.Email
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    keyboard?.hide()
+                    commitCheck(email)
+                }
+            ),
+            singleLine = true,
             placeholder = {
                 Text(
                     text = "Email",
@@ -134,6 +153,7 @@ private fun InputEmailPage() {
         HugeButton(config = ButtonConfig().apply {
             text = "Login with Email"
             onClick = {
+                keyboard?.hide()
                 commitCheck(email)
             }
         }, enable = commitButtonEnable)
@@ -179,7 +199,7 @@ private suspend fun emailCheck(email: String, scope: CoroutineScope, context: Co
                                     context,
                                     "Sorry but the sever was not responding, please try again later."
                                 )
-                            }else{
+                            } else {
                                 WalletLifecyclePresenter.register = it
                             }
                             leavesEntryPage()

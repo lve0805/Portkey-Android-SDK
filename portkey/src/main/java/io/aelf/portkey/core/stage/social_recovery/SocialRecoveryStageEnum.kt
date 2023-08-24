@@ -7,13 +7,12 @@ enum class SocialRecoveryStageEnum {
     READY_TO_REGISTER,
     // This account has been registered, ready to login
     READY_TO_LOGIN,
-    // All the required guardians have been fulfilled, ready to set pin
-    LOGIN_GUARDIAN_FULFILLED,
-    // All the required guardians have been fulfilled, ready to set pin
-    REGISTER_GUARDIAN_FULFILLED,
     // Set pin and get the wallet
     SET_PIN,
     // Active wallet is in use
-    ACTIVE
+    ACTIVE,
+
+    // Trying to unlock wallet, if succeed, will enter ACTIVE
+    UNLOCK
 }
 

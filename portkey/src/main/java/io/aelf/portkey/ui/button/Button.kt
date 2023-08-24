@@ -6,6 +6,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -25,8 +26,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.aelf.portkey.tools.friendly.DynamicWidth
 import io.aelf.portkey.component.global.NullableTools.dpOrDefault
+import io.aelf.portkey.tools.friendly.DynamicWidth
 
 @Composable
 fun HugeButton(config: ButtonConfig, enable: Boolean = true) {
@@ -41,21 +42,21 @@ fun MediumButton(config: ButtonConfig, enable: Boolean = true) {
     Button(config.apply {
         height = 44.dp
         width = 140.dp
-    }, enable)
+    }, enable = enable, useButton = false)
 }
 
 @Composable
 fun TinyButton(config: ButtonConfig, enable: Boolean = true) {
     Button(config.apply {
-        height = 38.dp
+        height = 28.dp
         width = 62.dp
         fontSize = 12.sp
-        lineHeight = 22.sp
-    }, enable)
+        lineHeight = 18.sp
+    }, enable = enable, useButton = false)
 }
 
 @Composable
-private fun Button(config: ButtonConfig, enable: Boolean) {
+private fun Button(config: ButtonConfig, enable: Boolean, useButton: Boolean = true) {
     TextButton(
         enabled = enable,
         onClick = config.onClick,
@@ -67,9 +68,15 @@ private fun Button(config: ButtonConfig, enable: Boolean) {
             disabledContainerColor = Color(0xFF8F949C).copy(alpha = 0.1F)
         ),
         border = BorderStroke(config.borderWidth, config.borderColor),
-        shape = RoundedCornerShape(8.dp)
+        shape = RoundedCornerShape(8.dp),
+        contentPadding = PaddingValues(
+            start = 12.dp,
+            top = 5.dp,
+            end = 12.dp,
+            bottom = 5.dp
+        )
     ) {
-        if (config.iconPath != -1 && config.iconSize > 0) {
+        if (config.iconPath != -1 && config.iconSize > 0 && useButton) {
             Image(
                 painter = painterResource(id = config.iconPath),
                 contentDescription = null,
@@ -87,7 +94,7 @@ private fun Button(config: ButtonConfig, enable: Boolean) {
                 fontSize = config.fontSize,
                 fontWeight = FontWeight(config.fontWeight),
                 lineHeight = config.lineHeight
-            )
+            ),
         )
     }
 }
@@ -95,6 +102,7 @@ private fun Button(config: ButtonConfig, enable: Boolean) {
 
 open class ButtonConfig {
     var text: String = "Yes"
+
     @DrawableRes
     var iconPath: Int = -1
     var iconSize: Int = 0

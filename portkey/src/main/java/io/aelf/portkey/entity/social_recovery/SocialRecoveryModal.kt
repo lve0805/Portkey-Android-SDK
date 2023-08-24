@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,15 +34,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import io.aelf.portkey.R
+import io.aelf.portkey.behaviour.entry.EntryBehaviourEntity
 import io.aelf.portkey.core.presenter.WalletLifecyclePresenter
 import io.aelf.portkey.core.stage.social_recovery.SocialRecoveryStageEnum
 import io.aelf.portkey.debug.initDebug
-import io.aelf.portkey.entity.social_recovery.stage.EntryPage
-import io.aelf.portkey.entity.social_recovery.stage.RegisterPage
-import io.aelf.portkey.entity.social_recovery.static.PortkeyFootage
+import io.aelf.portkey.entity.social_recovery.stage.init.EntryPage
+import io.aelf.portkey.entity.social_recovery.stage.verify.RegisterPage
+import io.aelf.portkey.entity.static.footage.PortkeyFootage
 import io.aelf.portkey.tools.friendly.UseAndroidBackButtonSettings
 import io.aelf.portkey.tools.friendly.UseComponentDidMount
-import io.aelf.portkey.tools.friendly.UseComponentWillUnmount
 import io.aelf.portkey.tools.friendly.UseEffect
 import io.aelf.portkey.ui.basic.ZIndexConfig
 import io.aelf.portkey.ui.button.ButtonConfig
@@ -49,9 +50,12 @@ import io.aelf.portkey.ui.button.HugeButton
 import io.aelf.portkey.ui.dialog.Dialog
 import io.aelf.portkey.ui.dialog.Dialog.PortkeyDialog
 import io.aelf.portkey.ui.dialog.DialogProps
+import io.aelf.portkey.ui.loading.Loading
 import io.aelf.portkey.ui.loading.Loading.PortkeyLoading
 import io.aelf.portkey.utils.log.GLogger
 import io.aelf.utils.AElfException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 internal object SocialRecoveryModal : ModalController {
     private var isShow by mutableStateOf(false)
@@ -62,6 +66,12 @@ internal object SocialRecoveryModal : ModalController {
     internal fun callUpModal(props: SocialRecoveryModalProps) {
         this.modalProps = props
         isShow = true
+    }
+
+    internal fun onSuccess() {
+        isShow = false
+        WalletLifecyclePresenter.reset(saveWallet = true)
+        modalProps.onSuccess?.let { it() }
     }
 
     override fun closeModal() {
@@ -102,14 +112,30 @@ internal object SocialRecoveryModal : ModalController {
             animationSpec = tween(500),
             label = "modal bgColor"
         )
+        val scope = rememberCoroutineScope()
         if (isShow) {
+            UseComponentDidMount {
+                Loading.showLoading("Checking existing wallet...")
+                scope.launch(Dispatchers.IO) {
+                    EntryBehaviourEntity.ifLockedWalletExists().let {
+                        if (it) {
+                            GLogger.t("locked wallet exists, trying to unlock")
+                            WalletLifecyclePresenter.unlock =
+                                EntryBehaviourEntity.attemptToGetLockedWallet().get()
+                            clearBackProcess()
+                        }
+                    }
+                    Loading.hideLoading(800)
+                }
+            }
             UseEffect(
                 WalletLifecyclePresenter.wallet,
                 WalletLifecyclePresenter.entry,
                 WalletLifecyclePresenter.login,
                 WalletLifecyclePresenter.register,
                 WalletLifecyclePresenter.activeGuardian,
-                WalletLifecyclePresenter.setPin
+                WalletLifecyclePresenter.setPin,
+                WalletLifecyclePresenter.unlock
             ) {
                 WalletLifecyclePresenter.inferCurrentStage()
             }
@@ -123,9 +149,6 @@ internal object SocialRecoveryModal : ModalController {
                 verticalArrangement = Arrangement.Bottom
             ) {
                 ModalBody()
-            }
-            UseComponentWillUnmount {
-                WalletLifecyclePresenter.reset()
             }
         }
     }

@@ -190,7 +190,7 @@ open class DialogProps {
 
 @Preview
 @Composable
-fun PreviewDialog() {
+private fun DialogPreview() {
     val context = LocalContext.current
     UseComponentDidMount {
         InitProcessor.init(SDkInitConfig.Builder().build(), context)

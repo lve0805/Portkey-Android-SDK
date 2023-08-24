@@ -35,9 +35,11 @@ internal fun isValid(str: String?): Boolean {
     return !str.isNullOrEmpty()
 }
 
-enum class ZIndexConfig(val z: Float) {
+enum class ZIndexConfig(private val z: Float) {
     Loading(100f),
     Dialog(50f),
+    SubIcon(18f),
+    MainIcon(15f),
     Modal(10f);
     internal fun getZIndex(): Float {
         return z

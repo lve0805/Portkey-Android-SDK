@@ -8,6 +8,7 @@ import io.aelf.portkey.behaviour.entry.EntryBehaviourEntity
 import io.aelf.portkey.behaviour.guardian.GuardianBehaviourEntity
 import io.aelf.portkey.behaviour.login.LoginBehaviourEntity
 import io.aelf.portkey.behaviour.pin.SetPinBehaviourEntity
+import io.aelf.portkey.behaviour.pin.WalletUnlockEntity
 import io.aelf.portkey.behaviour.register.RegisterBehaviourEntity
 import io.aelf.portkey.behaviour.wallet.PortkeyWallet
 import io.aelf.portkey.core.stage.social_recovery.SocialRecoveryStageEnum
@@ -21,24 +22,25 @@ internal object WalletLifecyclePresenter {
     internal var setPin: SetPinBehaviourEntity? by mutableStateOf(null)
     internal var wallet: PortkeyWallet? by mutableStateOf(null)
 
+    internal var unlock: WalletUnlockEntity? by mutableStateOf(null)
+
     internal var stageEnum by mutableStateOf(SocialRecoveryStageEnum.INIT)
 
     internal fun inferCurrentStage() {
-        if (wallet != null) {
-            stageEnum = SocialRecoveryStageEnum.ACTIVE
-            return
-        } else if (setPin != null) {
-            stageEnum = SocialRecoveryStageEnum.SET_PIN
-            return
-        } else {
-            stageEnum = if (login != null) {
-                if (login!!.isFulfilled) SocialRecoveryStageEnum.LOGIN_GUARDIAN_FULFILLED else SocialRecoveryStageEnum.READY_TO_LOGIN
+        stageEnum =
+            if (unlock != null) {
+                SocialRecoveryStageEnum.UNLOCK
+            } else if (wallet != null) {
+                SocialRecoveryStageEnum.ACTIVE
+            } else if (setPin != null) {
+                SocialRecoveryStageEnum.SET_PIN
             } else if (register != null) {
-                if (register!!.isVerified) SocialRecoveryStageEnum.REGISTER_GUARDIAN_FULFILLED else SocialRecoveryStageEnum.READY_TO_REGISTER
+                SocialRecoveryStageEnum.READY_TO_REGISTER
+            } else if (login != null) {
+                SocialRecoveryStageEnum.READY_TO_LOGIN
             } else {
                 SocialRecoveryStageEnum.INIT
             }
-        }
     }
 
     internal object SpecialStageIdentifier {
@@ -50,13 +52,13 @@ internal object WalletLifecyclePresenter {
     }
 
     internal const val PIN_LENGTH = 6
-    internal fun reset() {
+    internal fun reset(saveWallet: Boolean = false) {
         entry = null
         login = null
         register = null
         activeGuardian = null
         setPin = null
-        wallet = null
+        if (!saveWallet) wallet = null
         SpecialStageIdentifier.reset()
         inferCurrentStage()
     }

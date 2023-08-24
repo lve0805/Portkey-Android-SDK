@@ -70,7 +70,7 @@ dependencies {
     implementation("io.github.oleksandrbalan:modalsheet:0.6.0")
     implementation ("org.jetbrains.kotlin:kotlin-reflect")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1")
-
+    implementation("io.coil-kt:coil-compose:2.4.0")
 
     implementation("io.aelf:portkey-java-sdk:0.0.7-SNAPSHOT") {
         isChanging = true
