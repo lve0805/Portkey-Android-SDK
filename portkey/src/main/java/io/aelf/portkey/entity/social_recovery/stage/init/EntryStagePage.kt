@@ -41,13 +41,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.aelf.portkey.R
 import io.aelf.portkey.behaviour.entry.EntryBehaviourEntity
 import io.aelf.portkey.behaviour.entry.EntryBehaviourEntity.CheckedEntry
 import io.aelf.portkey.behaviour.global.EntryCheckConfig
 import io.aelf.portkey.core.presenter.WalletLifecyclePresenter
 import io.aelf.portkey.entity.social_recovery.SocialRecoveryModal
 import io.aelf.portkey.internal.model.common.AccountOriginalType
+import io.aelf.portkey.internal.model.google.GoogleAccount
+import io.aelf.portkey.sdk.R
 import io.aelf.portkey.tools.friendly.DynamicWidth
 import io.aelf.portkey.tools.friendly.NETWORK_TIMEOUT
 import io.aelf.portkey.ui.basic.ErrorMsg
@@ -55,6 +56,7 @@ import io.aelf.portkey.ui.basic.HugeTitle
 import io.aelf.portkey.ui.basic.Toast.showToast
 import io.aelf.portkey.ui.button.ButtonConfig
 import io.aelf.portkey.ui.button.HugeButton
+import io.aelf.portkey.ui.button.IconConfig
 import io.aelf.portkey.ui.dialog.Dialog
 import io.aelf.portkey.ui.dialog.DialogProps
 import io.aelf.portkey.ui.loading.Loading
@@ -62,16 +64,22 @@ import io.aelf.portkey.utils.log.GLogger
 import io.aelf.utils.AElfException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+private var entryPageHandler: (((String, CoroutineScope, Context) -> Unit, String) -> Unit)? = null
+
 @Composable
 internal fun EntryPage() {
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     if (WalletLifecyclePresenter.SpecialStageIdentifier.CHOSE_TO_INPUT_EMAIL) {
         InputEmailPage()
     } else {
         ChoosePathPage()
+    }
+    entryPageHandler = { callback, token ->
+        callback(token, scope, context)
     }
 }
 
@@ -101,8 +109,8 @@ private fun InputEmailPage() {
             errorMsg = "Invalid email address"
             commitButtonEnable = false
         } else {
-            scope.async {
-                emailCheck(email, this, context)
+            scope.launch(Dispatchers.IO) {
+                authCheck(email, this, context)
             }
         }
     }
@@ -158,18 +166,27 @@ private fun InputEmailPage() {
             }
         }, enable = commitButtonEnable)
     }
-
 }
 
+
 @WorkerThread
-private suspend fun emailCheck(email: String, scope: CoroutineScope, context: Context) {
+private suspend fun authCheck(
+    auth: String,
+    scope: CoroutineScope,
+    context: Context,
+    accountType: AccountOriginalType = AccountOriginalType.Email,
+    googleAccount: GoogleAccount? = null
+) {
     Loading.showLoading("Checking on-chain data...")
     val checkDeferred = scope.launch(Dispatchers.IO) {
         val entry: CheckedEntry =
-            EntryBehaviourEntity.attemptAccountCheck(EntryCheckConfig().apply {
-                accountIdentifier = email
-                accountOriginalType = AccountOriginalType.Email
-            })
+            EntryBehaviourEntity.attemptAccountCheck(
+                EntryCheckConfig().apply {
+                    accountIdentifier = auth
+                    accountOriginalType = accountType
+                },
+                googleAccount
+            )
         Loading.hideLoading()
         if (entry.isRegistered) {
             entry.asLogInChain().onLoginStep {
@@ -255,7 +272,6 @@ private fun TitleLine() {
 
 @Composable
 private fun LoginPathSelector() {
-    val context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -269,8 +285,11 @@ private fun LoginPathSelector() {
             bgColor = Color(0xFF4285F4)
             textColor = Color(0xFFFFFFFF)
             onClick = {
-                showToast(context, "Stub: need implement")
+                SocialRecoveryModal.checkGoogleToken()
             }
+        }, icon = IconConfig().apply {
+            iconResId = R.drawable.google_icon
+            tintColor = Color.White
         })
         Divider()
         HugeButton(config = ButtonConfig().apply {
@@ -278,7 +297,23 @@ private fun LoginPathSelector() {
             bgColor = Color(0xFFFFFFFF)
             textColor = Color(0xFF162736)
             onClick = ::enterInputEmailPage
+        }, icon = IconConfig().apply {
+            iconResId = R.drawable.email_icon
         })
+    }
+}
+
+internal fun continueWithGoogleToken(googleAccount: GoogleAccount) {
+    entryPageHandler?.let {
+        it(
+            { token, scope, context ->
+                run {
+                    scope.launch(Dispatchers.IO) {
+                        authCheck(token, scope, context, AccountOriginalType.Google, googleAccount)
+                    }
+                }
+            }, googleAccount.id
+        )
     }
 }
 

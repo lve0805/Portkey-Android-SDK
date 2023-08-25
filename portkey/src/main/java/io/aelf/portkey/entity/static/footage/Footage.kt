@@ -12,7 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import io.aelf.portkey.R
+import io.aelf.portkey.sdk.R
 
 @Composable
 internal fun PortkeyFootage() {

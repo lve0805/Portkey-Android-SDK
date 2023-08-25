@@ -1,20 +1,25 @@
 package io.aelf.portkey.ui.button
 
 import android.widget.Toast
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -26,15 +31,50 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
+import io.aelf.portkey.sdk.R
 import io.aelf.portkey.component.global.NullableTools.dpOrDefault
 import io.aelf.portkey.tools.friendly.DynamicWidth
+import io.aelf.portkey.ui.basic.ZIndexConfig
 
 @Composable
-fun HugeButton(config: ButtonConfig, enable: Boolean = true) {
-    Button(config.apply {
-        height = 50.dp
-        width = dpOrDefault(DynamicWidth(20), 320.dp)
-    }, enable)
+fun HugeButton(config: ButtonConfig, enable: Boolean = true, icon: IconConfig? = null) {
+    Box(
+        modifier = Modifier
+            .height(50.dp)
+            .width(dpOrDefault(DynamicWidth(20), 320.dp))
+    ) {
+        if (icon != null && icon.iconResId != 0) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(ZIndexConfig.MainIcon.getZIndex()),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start
+            ) {
+                val paddingLeft = icon.paddingLeft
+                if (paddingLeft > 0) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .width(paddingLeft.dp)
+                    )
+                }
+                Icon(
+                    painter = painterResource(id = icon.iconResId),
+                    contentDescription = "button icon",
+                    tint = icon.tintColor,
+                    modifier = Modifier
+                        .size(icon.size.dp)
+                        .background(Color.Transparent)
+                )
+            }
+        }
+        Button(config.apply {
+            height = 50.dp
+            width = dpOrDefault(DynamicWidth(20), 320.dp)
+        }, enable)
+    }
 }
 
 @Composable
@@ -42,7 +82,7 @@ fun MediumButton(config: ButtonConfig, enable: Boolean = true) {
     Button(config.apply {
         height = 44.dp
         width = 140.dp
-    }, enable = enable, useButton = false)
+    }, enable = enable)
 }
 
 @Composable
@@ -52,11 +92,11 @@ fun TinyButton(config: ButtonConfig, enable: Boolean = true) {
         width = 62.dp
         fontSize = 12.sp
         lineHeight = 18.sp
-    }, enable = enable, useButton = false)
+    }, enable = enable)
 }
 
 @Composable
-private fun Button(config: ButtonConfig, enable: Boolean, useButton: Boolean = true) {
+private fun Button(config: ButtonConfig, enable: Boolean) {
     TextButton(
         enabled = enable,
         onClick = config.onClick,
@@ -76,17 +116,6 @@ private fun Button(config: ButtonConfig, enable: Boolean, useButton: Boolean = t
             bottom = 5.dp
         )
     ) {
-        if (config.iconPath != -1 && config.iconSize > 0 && useButton) {
-            Image(
-                painter = painterResource(id = config.iconPath),
-                contentDescription = null,
-                modifier = Modifier
-                    .width(config.iconSize.dp)
-                    .height(config.iconSize.dp)
-                    .background(Color.Transparent)
-                    .padding(end = 10.dp)
-            )
-        }
         Text(
             text = config.text,
             style = TextStyle(
@@ -102,10 +131,6 @@ private fun Button(config: ButtonConfig, enable: Boolean, useButton: Boolean = t
 
 open class ButtonConfig {
     var text: String = "Yes"
-
-    @DrawableRes
-    var iconPath: Int = -1
-    var iconSize: Int = 0
     var bgColor: Color = Color(0xFF4285F4)
     var textColor: Color = Color.White
     var fontWeight: Int = 500
@@ -119,15 +144,26 @@ open class ButtonConfig {
     var width = (-1).dp
 }
 
+open class IconConfig {
+    var iconResId: Int = 0
+    var size: Int = 18
+    var paddingLeft: Int = 12
+    var tintColor: Color = Color.Black
+}
+
 @Preview
 @Composable
 fun PreviewButton() {
     val context = LocalContext.current
     Column {
-        HugeButton(ButtonConfig().apply {
+        HugeButton(config = ButtonConfig().apply {
             onClick = {
                 Toast.makeText(context, "Huge", Toast.LENGTH_SHORT).show()
             }
+        }, icon = IconConfig().apply {
+            iconResId = R.drawable.google_icon
+            size = 16
+            paddingLeft = 12
         })
         MediumButton(ButtonConfig().apply {
             onClick = {

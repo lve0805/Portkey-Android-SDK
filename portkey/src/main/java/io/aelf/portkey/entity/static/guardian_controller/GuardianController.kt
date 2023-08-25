@@ -33,10 +33,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
-import io.aelf.portkey.R
 import io.aelf.portkey.behaviour.guardian.GuardianBehaviourEntity
 import io.aelf.portkey.internal.model.common.AccountOriginalType
 import io.aelf.portkey.internal.model.guardian.GuardianDTO
+import io.aelf.portkey.sdk.R
 import io.aelf.portkey.tools.friendly.DynamicWidth
 import io.aelf.portkey.ui.basic.ZIndexConfig
 import io.aelf.portkey.ui.button.ButtonConfig
@@ -166,7 +166,7 @@ private fun Texts(info: GuardianDTO) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = guardianName,
+            text = guardianName ?: info.type,
             maxLines = if (TextUtils.isEmpty(guardianIdentifier)) 2 else 1,
             fontSize = 14.sp,
             textAlign = TextAlign.Start,
@@ -193,7 +193,7 @@ private fun Texts(info: GuardianDTO) {
 @Composable
 private fun Actions(info: GuardianInfo) {
     val state = info.state
-    if (state != OutsideStateEnum.Normal) {
+    if (state != OutsideStateEnum.Normal && state != OutsideStateEnum.LimitReached) {
         when (state) {
             OutsideStateEnum.Expired -> {
                 Text(
@@ -207,7 +207,6 @@ private fun Actions(info: GuardianInfo) {
             }
 
             OutsideStateEnum.Register,
-            OutsideStateEnum.LimitReached,
             -> {
                 // Do nothing
             }
@@ -219,12 +218,14 @@ private fun Actions(info: GuardianInfo) {
         val type = convertTypeStringToEnum(guardianDTO.type)
         val isVerify = (type == AccountOriginalType.Apple || type == AccountOriginalType.Google)
         val verified = info.guardianEntity!!.isVerified
-        if (verified) {
-            Icon(
-                painter = painterResource(id = R.drawable.verified),
-                contentDescription = "verified icon",
-                modifier = Modifier.size(16.dp)
-            )
+        if (state == OutsideStateEnum.LimitReached) {
+            if(verified){
+                Icon(
+                    painter = painterResource(id = R.drawable.verified),
+                    contentDescription = "verified icon",
+                    modifier = Modifier.size(16.dp)
+                )
+            }
         } else {
             TinyButton(
                 ButtonConfig().apply {
@@ -273,8 +274,6 @@ internal enum class OutsideStateEnum {
     LimitReached,  // Reached the limit, no need to verify now
     Register // Components in register page have no actions
 }
-
-private const val NO_ICON = -1
 
 @Preview
 @Composable

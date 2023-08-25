@@ -1,5 +1,7 @@
 package io.aelf.portkey.entity.social_recovery
 
+
+import android.text.TextUtils
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -33,14 +35,20 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import io.aelf.portkey.R
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import io.aelf.portkey.behaviour.entry.EntryBehaviourEntity
 import io.aelf.portkey.core.presenter.WalletLifecyclePresenter
 import io.aelf.portkey.core.stage.social_recovery.SocialRecoveryStageEnum
 import io.aelf.portkey.debug.initDebug
 import io.aelf.portkey.entity.social_recovery.stage.init.EntryPage
+import io.aelf.portkey.entity.social_recovery.stage.init.continueWithGoogleToken
+import io.aelf.portkey.entity.social_recovery.stage.pin.SetPinStagePage
+import io.aelf.portkey.entity.social_recovery.stage.pin.UnlockStagePage
+import io.aelf.portkey.entity.social_recovery.stage.verify.LoginStagePage
 import io.aelf.portkey.entity.social_recovery.stage.verify.RegisterPage
 import io.aelf.portkey.entity.static.footage.PortkeyFootage
+import io.aelf.portkey.internal.model.google.GoogleAccount
+import io.aelf.portkey.sdk.R
 import io.aelf.portkey.tools.friendly.UseAndroidBackButtonSettings
 import io.aelf.portkey.tools.friendly.UseComponentDidMount
 import io.aelf.portkey.tools.friendly.UseEffect
@@ -57,21 +65,51 @@ import io.aelf.utils.AElfException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-internal object SocialRecoveryModal : ModalController {
+object SocialRecoveryModal : ModalController {
     private var isShow by mutableStateOf(false)
     private const val heightPercent = 0.85f
     private var backFunction: (() -> Unit)? by mutableStateOf(null)
     private var modalProps: SocialRecoveryModalProps = SocialRecoveryModalProps()
 
-    internal fun callUpModal(props: SocialRecoveryModalProps) {
+    fun callUpModal(props: SocialRecoveryModalProps) {
         this.modalProps = props
         isShow = true
+    }
+
+    internal fun sendGoogleToken(googleAccount: GoogleSignInAccount?) {
+        Loading.hideLoading()
+        if (googleAccount == null || TextUtils.isEmpty(googleAccount?.id)) {
+            Dialog.show(DialogProps().apply {
+                mainTitle = "Google Auth Failure"
+                subTitle = "Sorry, we can't get your Google Account at this time, please try again."
+                positiveText = "Retry"
+                negativeText = "Cancel"
+                positiveCallback = {
+                    checkGoogleToken()
+                }
+            })
+        } else {
+            continueWithGoogleToken(convertGoogleAccount(googleAccount))
+        }
+    }
+
+    private fun convertGoogleAccount(googleAccount: GoogleSignInAccount): GoogleAccount {
+        return GoogleAccount().apply {
+            id = googleAccount.id
+            email = googleAccount.email
+            idToken = googleAccount.idToken
+        }
     }
 
     internal fun onSuccess() {
         isShow = false
         WalletLifecyclePresenter.reset(saveWallet = true)
         modalProps.onSuccess?.let { it() }
+    }
+
+    internal fun checkGoogleToken() {
+        Loading.showLoading("Checking Google Account...")
+        modalProps.onUseGoogleAuthService?.let { it() }
     }
 
     override fun closeModal() {
@@ -90,6 +128,12 @@ internal object SocialRecoveryModal : ModalController {
         isShow = false
         WalletLifecyclePresenter.reset()
         modalProps.onError?.let { it(exception) }
+    }
+
+    internal fun goBack(){
+        backFunction?.let {
+            it()
+        }
     }
 
     override fun setBackProcess(goWithCleanItself: Boolean, function: () -> Unit) {
@@ -125,7 +169,7 @@ internal object SocialRecoveryModal : ModalController {
                             clearBackProcess()
                         }
                     }
-                    Loading.hideLoading(800)
+                    Loading.hideLoadingCoroutine(scope = this, duration = 800)
                 }
             }
             UseEffect(
@@ -188,15 +232,24 @@ internal object SocialRecoveryModal : ModalController {
                 .background(Color.White)
         ) {
             when (WalletLifecyclePresenter.stageEnum) {
-                SocialRecoveryStageEnum.INIT,
-                -> {
-                    // Starter page
+                SocialRecoveryStageEnum.INIT -> {
                     EntryPage()
                 }
 
                 SocialRecoveryStageEnum.READY_TO_REGISTER -> {
-                    // Go to register page
                     RegisterPage()
+                }
+
+                SocialRecoveryStageEnum.READY_TO_LOGIN -> {
+                    LoginStagePage()
+                }
+
+                SocialRecoveryStageEnum.UNLOCK -> {
+                    UnlockStagePage()
+                }
+
+                SocialRecoveryStageEnum.SET_PIN -> {
+                    SetPinStagePage()
                 }
 
                 else -> {}
@@ -263,23 +316,24 @@ open class SocialRecoveryModalProps {
     var onUserCancel: (() -> Unit)? = null
     var onSuccess: (() -> Unit)? = null
     var onError: ((AElfException) -> Unit)? = null
+    var onUseGoogleAuthService: (() -> Unit)? = null
 }
 
 
 @Preview
 @Composable
-fun ModalPreview() {
+internal fun ModalPreview() {
     val context = LocalContext.current
     UseComponentDidMount {
         initDebug(context)
     }
-    var props = remember {
+    val props = remember {
         SocialRecoveryModalProps().apply {
             onUserCancel = {
                 GLogger.w("onUserCancel")
             }
             onSuccess = {
-                println("onSuccess")
+                GLogger.w("onSuccess")
             }
             onError = {
                 GLogger.e("onError", it)
