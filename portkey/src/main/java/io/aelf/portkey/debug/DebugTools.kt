@@ -15,6 +15,6 @@ import kotlinx.coroutines.launch
 
 internal fun initDebug(context: Context) {
     InitProcessor.init(SDkInitConfig.Builder().build(), context)
-    RetrofitProvider.resetOrInitMainRetrofit("https://localtest-applesign2.portkey.finance")
+    RetrofitProvider.resetOrInitMainRetrofit("https://bingogame-test.portkey.finance")
     GlobalConfig.setTestEnv(true)
 }

@@ -115,14 +115,35 @@ private fun Icons(info: GuardianDTO) {
             .height(28.dp),
         contentAlignment = Alignment.TopStart
     ) {
-        AsyncImage(
-            model = info.imageUrl,
-            contentDescription = "Guardian Image",
-            modifier = Modifier
-                .height(28.dp)
-                .width(28.dp)
-                .zIndex(ZIndexConfig.MainIcon.getZIndex())
-        )
+        if (!TextUtils.isEmpty(info.imageUrl)) {
+            AsyncImage(
+                model = info.imageUrl,
+                contentDescription = "Guardian Image",
+                modifier = Modifier
+                    .height(28.dp)
+                    .width(28.dp)
+                    .zIndex(ZIndexConfig.MainIcon.getZIndex())
+            )
+        } else {
+            Row(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF5B8EF4))
+                ,
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.portkey_icon),
+                    contentDescription = "guardian type icon : " + info.type,
+                    modifier = Modifier
+                        .size(16.dp)
+                        .zIndex(ZIndexConfig.MainIcon.getZIndex()),
+                    tint = Color.White
+                )
+            }
+        }
         Row(
             modifier = Modifier
                 .zIndex(ZIndexConfig.SubIcon.getZIndex())
@@ -219,7 +240,7 @@ private fun Actions(info: GuardianInfo) {
         val isVerify = (type == AccountOriginalType.Apple || type == AccountOriginalType.Google)
         val verified = info.guardianEntity!!.isVerified
         if (state == OutsideStateEnum.LimitReached) {
-            if(verified){
+            if (verified) {
                 Icon(
                     painter = painterResource(id = R.drawable.verified),
                     contentDescription = "verified icon",

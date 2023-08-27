@@ -1,6 +1,8 @@
 package io.aelf.portkey.entity.social_recovery.stage.verify
 
 import android.content.Context
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -16,16 +18,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -131,7 +134,18 @@ private fun GuardianVerifyStatusBar() {
             Icon(
                 painter = painterResource(id = R.drawable.question_icon),
                 contentDescription = "question icon",
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier
+                    .size(16.dp)
+                    .clickable {
+                        Dialog.show(DialogProps().apply {
+                            mainTitle = "Guardians' Approval Rule"
+                            subTitle =
+                                "You will need a certain number of guardians to confirm your action. The requirements differ depending on your guardian counts.\n" +
+                                        "If the total number is less than or equal to 3, approval from all is needed. If that figure is greater than 3, approval from a minimum of 60% is needed."
+                            useSingleConfirmButton = true
+                            positiveText="Got it"
+                        })
+                    },
                 tint = Color(0xFF8F949C)
             )
         }
@@ -142,20 +156,9 @@ private fun GuardianVerifyStatusBar() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            val verified = loginEntity?.isFulfilled ?: false
             val current = loginEntity?.fullFilledGuardianCount ?: 0
             val limit = loginEntity?.guardianVerifyLimit ?: 0
-            Icon(
-                painter = painterResource(
-                    id = if (verified)
-                        R.drawable.guardian_verify_verified
-                    else
-                        R.drawable.guardian_verify_init
-                ),
-                contentDescription = "guardian verify status",
-                modifier = Modifier
-                    .size(14.dp)
-            )
+            ProgressIcon()
             Distance(5)
             RichText(
                 text = "#${current}# / $limit",
@@ -171,14 +174,68 @@ private fun GuardianVerifyStatusBar() {
 }
 
 @Composable
+private fun ProgressIcon() {
+    val login = WalletLifecyclePresenter.login ?: return
+    val useCircleBg = !login.isFulfilled && login.fullFilledGuardianCount > 0
+    val resId = computeProgressIconRes(login = login)
+    if (useCircleBg) {
+        Row(
+            modifier = Modifier
+                .size(14.dp)
+                .clip(CircleShape)
+                .border(width = 1.dp, color = Color(0xFF20CD85), shape = CircleShape),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ProgressIconContent(resId = resId, size = 14)
+        }
+    } else {
+        ProgressIconContent(resId = resId, size = 14)
+    }
+}
+
+@Composable
+private fun ProgressIconContent(resId: Int, size: Int) {
+    Icon(
+        painter = painterResource(
+            id = resId
+        ),
+        tint = Color(0xFF20CD85),
+        contentDescription = "guardian verify status",
+        modifier = Modifier.size(size.dp)
+    )
+}
+
+private fun computeProgressIconRes(login: LoginBehaviourEntity): Int {
+    return if (login.isFulfilled) {
+        R.drawable.guardian_verify_verified
+    } else if (login.fullFilledGuardianCount == 0) {
+        R.drawable.guardian_verify_init
+    } else {
+        val progress: Double =
+            login.fullFilledGuardianCount.toDouble() / login.guardianVerifyLimit.toDouble()
+        when {
+            progress <= 0.125 -> R.drawable.pending_01
+            progress <= 0.25 -> R.drawable.pending_02
+            progress <= 0.375 -> R.drawable.pending_03
+            progress <= 0.5 -> R.drawable.pending_04
+            progress <= 0.625 -> R.drawable.pending_05
+            progress <= 0.75 -> R.drawable.pending_06
+            progress <= 0.875 -> R.drawable.pending_07
+            else -> R.drawable.pending_07
+        }
+    }
+}
+
+@Composable
 private fun GuardianInfoList() {
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     if (loginEntity == null) return
-    val guardiansOriginal = loginEntity?.guardians
-    val guardians = remember {
-        guardiansOriginal?.mapIndexed { index, info ->
+    val guardiansOriginal = loginEntity?.guardians ?: emptyList()
+    val guardians =
+        guardiansOriginal.mapIndexed { index, info ->
             GuardianInfo().apply {
                 guardianEntity = loginEntity!!.getGuardianBehaviourEntity(index)
                 state = if (isExpired) OutsideStateEnum.Expired
@@ -212,11 +269,10 @@ private fun GuardianInfoList() {
                     }
                 }
             }
-        } ?: emptyList()
-    }
+        }
     BoxWithConstraints(
         modifier = Modifier
-            .padding(top = 8.dp)
+            .padding(top = 8.dp, bottom = 68.dp)
             .width(DynamicWidth(paddingHorizontal = 20))
             .wrapContentHeight(Alignment.CenterVertically)
     ) {
@@ -253,9 +309,9 @@ private suspend fun googleGuardianVerify(scope: CoroutineScope, index: Int, cont
                 positiveText = "Try again"
                 negativeText = "Cancel"
                 positiveCallback = {
-                    WalletLifecyclePresenter.activeGuardian = null
-                    WalletLifecyclePresenter.inferCurrentStage()
-                    cleanUp()
+                    scope.launch(Dispatchers.IO) {
+                        googleGuardianVerify(scope, index, context)
+                    }
                 }
             })
         }

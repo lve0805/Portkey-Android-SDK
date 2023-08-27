@@ -42,6 +42,7 @@ import io.aelf.portkey.ui.basic.Toast.showToast
 import io.aelf.portkey.ui.basic.ZIndexConfig
 import io.aelf.portkey.ui.basic.wrapperStyle
 import io.aelf.portkey.ui.button.ButtonConfig
+import io.aelf.portkey.ui.button.HugeButton
 import io.aelf.portkey.ui.button.MediumButton
 import io.aelf.portkey.utils.log.GLogger
 
@@ -136,7 +137,7 @@ internal object Dialog {
                         textAlign = TextAlign.Center,
                         fontWeight = FontWeight(400)
                     ),
-                    maxLines = 3,
+                    maxLines = 10,
                     overflow = TextOverflow.Ellipsis
                 )
             }
@@ -157,22 +158,34 @@ internal object Dialog {
                 ),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            MediumButton(config = ButtonConfig().apply {
-                text = dialogProps.negativeText
-                onClick = {
-                    hide()
-                    dialogProps.negativeCallback()
-                }
-                bgColor = Color.White
-                textColor = Color(0xFF414852)
-            })
-            MediumButton(config = ButtonConfig().apply {
-                text = dialogProps.positiveText
-                onClick = {
-                    hide()
-                    dialogProps.positiveCallback()
-                }
-            })
+            if (dialogProps.useSingleConfirmButton) {
+                HugeButton(
+                    config = ButtonConfig().apply {
+                        text = dialogProps.positiveText
+                        onClick = {
+                            hide()
+                            dialogProps.positiveCallback()
+                        }
+                    }
+                )
+            } else {
+                MediumButton(config = ButtonConfig().apply {
+                    text = dialogProps.negativeText
+                    onClick = {
+                        hide()
+                        dialogProps.negativeCallback()
+                    }
+                    bgColor = Color.White
+                    textColor = Color(0xFF414852)
+                })
+                MediumButton(config = ButtonConfig().apply {
+                    text = dialogProps.positiveText
+                    onClick = {
+                        hide()
+                        dialogProps.positiveCallback()
+                    }
+                })
+            }
         }
     }
 
@@ -185,6 +198,7 @@ open class DialogProps {
     var negativeText: String = "Cancel"
     var positiveCallback: (() -> Unit) = {}
     var negativeCallback: (() -> Unit) = {}
+    var useSingleConfirmButton: Boolean = false
 }
 
 

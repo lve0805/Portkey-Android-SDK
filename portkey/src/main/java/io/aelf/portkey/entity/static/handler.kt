@@ -17,6 +17,7 @@ object Portkey {
     }
 
     fun sendGoogleAuthResult(googleSignInAccount: GoogleSignInAccount?) {
+        // TODO: Must get access_token from the backend, i will ask Hope Wang for help.
         SocialRecoveryModal.sendGoogleToken(googleSignInAccount)
     }
 }

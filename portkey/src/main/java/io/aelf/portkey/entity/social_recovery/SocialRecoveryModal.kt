@@ -77,7 +77,7 @@ object SocialRecoveryModal : ModalController {
     }
 
     internal fun sendGoogleToken(googleAccount: GoogleSignInAccount?) {
-        Loading.hideLoading()
+        Loading.hideLoading(2000)
         if (googleAccount == null || TextUtils.isEmpty(googleAccount?.id)) {
             Dialog.show(DialogProps().apply {
                 mainTitle = "Google Auth Failure"
@@ -228,7 +228,7 @@ object SocialRecoveryModal : ModalController {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.85f)
+                .fillMaxHeight(0.92f)
                 .background(Color.White)
         ) {
             when (WalletLifecyclePresenter.stageEnum) {

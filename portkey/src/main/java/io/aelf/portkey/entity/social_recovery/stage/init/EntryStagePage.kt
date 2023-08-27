@@ -51,6 +51,7 @@ import io.aelf.portkey.internal.model.google.GoogleAccount
 import io.aelf.portkey.sdk.R
 import io.aelf.portkey.tools.friendly.DynamicWidth
 import io.aelf.portkey.tools.friendly.NETWORK_TIMEOUT
+import io.aelf.portkey.tools.timeout.useTimeout
 import io.aelf.portkey.ui.basic.ErrorMsg
 import io.aelf.portkey.ui.basic.HugeTitle
 import io.aelf.portkey.ui.basic.Toast.showToast
@@ -226,12 +227,11 @@ private suspend fun authCheck(
             })
         }
     }
-    delay(NETWORK_TIMEOUT)
-    if (checkDeferred.isActive) {
-        checkDeferred.cancel()
-        Loading.hideLoading()
-        showToast(context, "Sorry but the sever was not responding, please try again later.")
-    }
+    useTimeout(job = checkDeferred, restart = {
+        scope.launch(Dispatchers.IO) {
+            authCheck(auth, scope, context, accountType, googleAccount)
+        }
+    })
 }
 
 private fun isEmailValid(email: String): Boolean {

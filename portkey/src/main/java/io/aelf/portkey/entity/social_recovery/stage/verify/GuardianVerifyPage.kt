@@ -32,7 +32,6 @@ import androidx.compose.ui.unit.sp
 import io.aelf.portkey.component.recaptcha.GoogleRecaptchaService
 import io.aelf.portkey.core.presenter.WalletLifecyclePresenter
 import io.aelf.portkey.core.stage.social_recovery.SocialRecoveryStageEnum
-import io.aelf.portkey.entity.social_recovery.SocialRecoveryModal
 import io.aelf.portkey.entity.static.guardian_controller.GuardianController
 import io.aelf.portkey.entity.static.guardian_controller.GuardianInfo
 import io.aelf.portkey.entity.static.guardian_controller.OutsideStateEnum
@@ -42,7 +41,6 @@ import io.aelf.portkey.tools.friendly.DynamicWidth
 import io.aelf.portkey.tools.friendly.UseComponentDidMount
 import io.aelf.portkey.ui.basic.ErrorMsg
 import io.aelf.portkey.ui.basic.HugeTitle
-import io.aelf.portkey.ui.basic.Toast.showToast
 import io.aelf.portkey.ui.dialog.Dialog
 import io.aelf.portkey.ui.dialog.DialogProps
 import io.aelf.portkey.ui.loading.Loading
@@ -174,33 +172,49 @@ private fun startCountDown(scope: CoroutineScope) {
     }
 }
 
-private fun headVerifyCode(code: String, scope: CoroutineScope, context: Context) {
+private fun headVerifyCode(code: String, scope: CoroutineScope) {
     scope.launch(Dispatchers.IO) {
         try {
             Loading.showLoading("Checking verify code...")
             val result = WalletLifecyclePresenter.activeGuardian!!.verifyVerificationCode(code)
             if (result) {
-                scope.launch(Dispatchers.Main) {
-                    showToast(context = context, text = "Register Success!")
-                }
-                if (WalletLifecyclePresenter.stageEnum == SocialRecoveryStageEnum.READY_TO_REGISTER) {
-                    // TODO have to send register request
-                    SocialRecoveryModal.onSuccess()
-                } else {
-                    // Login step
-                    WalletLifecyclePresenter.activeGuardian = null
-                }
-                cleanUp()
+                handleVerifySuccess(scope)
             } else {
                 errorMsg = "incorrect code"
             }
-            Loading.hideLoading()
         } catch (e: Throwable) {
             GLogger.e("Check verify code failed!", AElfException(e))
             errorMsg = "incorrect code"
             Loading.hideLoading()
         }
     }
+}
+
+private fun handleVerifySuccess(scope: CoroutineScope) {
+    Loading.hideLoading()
+    if (WalletLifecyclePresenter.stageEnum == SocialRecoveryStageEnum.READY_TO_REGISTER) {
+        scope.launch(Dispatchers.IO) {
+            delay(100)
+            Loading.showLoading("Sending request...")
+            try {
+                val setPin = WalletLifecyclePresenter.register?.afterVerified()
+                if (setPin != null) {
+                    GLogger.w("sendRegisterRequest success.")
+                    WalletLifecyclePresenter.setPin = setPin
+                    Loading.hideLoading()
+                    return@launch
+                }
+            } catch (e: Throwable) {
+                GLogger.e("sendRegisterRequest failure.", AElfException(e))
+            }
+            errorMsg = "network failure, please try again later."
+            Loading.hideLoading()
+        }
+    } else {
+        // Login step
+        WalletLifecyclePresenter.activeGuardian = null
+    }
+    cleanUp()
 }
 
 private fun cleanUp() {
@@ -223,7 +237,7 @@ internal fun checkInputCode(
         return
     }
     keyboardController?.hide()
-    headVerifyCode(code, scope, context)
+    headVerifyCode(code, scope)
 }
 
 fun checkAndSendVerifyCode(scope: CoroutineScope, context: Context) {
