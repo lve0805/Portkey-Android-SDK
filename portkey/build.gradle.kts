@@ -71,6 +71,8 @@ dependencies {
     implementation ("org.jetbrains.kotlin:kotlin-reflect")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1")
     implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation ("org.bouncycastle:bcprov-jdk15on:1.67")
+
 
     implementation("io.aelf:portkey-java-sdk:0.0.7-SNAPSHOT") {
         isChanging = true

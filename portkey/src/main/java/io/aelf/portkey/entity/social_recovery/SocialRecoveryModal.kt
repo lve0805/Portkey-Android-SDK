@@ -52,6 +52,7 @@ import io.aelf.portkey.sdk.R
 import io.aelf.portkey.tools.friendly.UseAndroidBackButtonSettings
 import io.aelf.portkey.tools.friendly.UseComponentDidMount
 import io.aelf.portkey.tools.friendly.UseEffect
+import io.aelf.portkey.ui.basic.Toast.showToast
 import io.aelf.portkey.ui.basic.ZIndexConfig
 import io.aelf.portkey.ui.button.ButtonConfig
 import io.aelf.portkey.ui.button.HugeButton
@@ -130,7 +131,7 @@ object SocialRecoveryModal : ModalController {
         modalProps.onError?.let { it(exception) }
     }
 
-    internal fun goBack(){
+    internal fun goBack() {
         backFunction?.let {
             it()
         }

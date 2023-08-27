@@ -143,7 +143,7 @@ private fun GuardianVerifyStatusBar() {
                                 "You will need a certain number of guardians to confirm your action. The requirements differ depending on your guardian counts.\n" +
                                         "If the total number is less than or equal to 3, approval from all is needed. If that figure is greater than 3, approval from a minimum of 60% is needed."
                             useSingleConfirmButton = true
-                            positiveText="Got it"
+                            positiveText = "Got it"
                         })
                     },
                 tint = Color(0xFF8F949C)
@@ -374,21 +374,21 @@ private suspend fun afterVerified(scope: CoroutineScope, context: Context) {
         try {
             val setPin = loginEntity?.afterVerified()
             if (setPin != null) {
-                scope.launch(Dispatchers.IO) {
-                    showToast(context, "Login successfully")
-                }
-                SocialRecoveryModal.onSuccess()
+                Loading.hideLoading()
+                WalletLifecyclePresenter.setPin = setPin
+                return@launch
             }
         } catch (e: Throwable) {
             GLogger.e("afterVerified error:${e.message}")
-            Dialog.show(DialogProps().apply {
-                mainTitle = "Network failure"
-                subTitle = "There's some issue happened, please try again."
-                positiveText = "Try again"
-                negativeText = "Cancel"
-                positiveCallback = ::restart
-            })
         }
+        Loading.hideLoading()
+        Dialog.show(DialogProps().apply {
+            mainTitle = "Network failure"
+            subTitle = "There's some issue happened, please try again."
+            positiveText = "Try again"
+            negativeText = "Cancel"
+            positiveCallback = ::restart
+        })
     }
     useTimeout(job = job, restart = ::restart)
 }

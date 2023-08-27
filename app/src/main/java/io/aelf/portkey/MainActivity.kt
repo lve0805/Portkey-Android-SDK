@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
@@ -24,9 +25,12 @@ import io.aelf.portkey.init.SDkInitConfig
 import io.aelf.portkey.internal.tools.GlobalConfig
 import io.aelf.portkey.network.retrofit.RetrofitProvider
 import io.aelf.portkey.tools.friendly.UseComponentDidMount
+import io.aelf.portkey.ui.basic.Toast
 import io.aelf.portkey.ui.button.ButtonConfig
 import io.aelf.portkey.ui.button.HugeButton
 import io.aelf.portkey.utils.log.GLogger
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Suppress("DEPRECATION")
 class MainActivity : ComponentActivity() {
@@ -42,8 +46,14 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun ModalPreview() {
         val context = LocalContext.current
+        val scope = rememberCoroutineScope()
         UseComponentDidMount {
             initDebug(context)
+        }
+        fun showToast(msg: String) {
+            scope.launch(Dispatchers.Main) {
+                Toast.showToast(context, msg)
+            }
         }
         googleAuthLauncher =
             rememberLauncherForActivityResult(
@@ -56,12 +66,15 @@ class MainActivity : ComponentActivity() {
             SocialRecoveryModalProps().apply {
                 onUserCancel = {
                     GLogger.w("onUserCancel")
+                    showToast("onUserCancel")
                 }
                 onSuccess = {
                     GLogger.w("onSuccess")
+                    showToast("onSuccess")
                 }
                 onError = {
                     GLogger.e("onError", it)
+                    showToast("onError")
                 }
                 onUseGoogleAuthService = {
                     useGoogleLogin(context)
@@ -81,7 +94,7 @@ class MainActivity : ComponentActivity() {
 
     internal fun initDebug(context: Context) {
         InitProcessor.init(SDkInitConfig.Builder().build(), context)
-        RetrofitProvider.resetOrInitMainRetrofit("https://bingogame-test.portkey.finance")
+        RetrofitProvider.resetOrInitMainRetrofit("https://localtest-applesign2.portkey.finance")
         GlobalConfig.setTestEnv(true)
     }
 
