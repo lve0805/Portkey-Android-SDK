@@ -59,23 +59,6 @@ internal fun PinPagePresenter(type: PinPageType) {
     } else if (type == PinPageType.CREATE && WalletLifecyclePresenter.setPin == null) {
         return
     }
-    UseComponentDidMount {
-        if (type == PinPageType.CREATE) {
-            SocialRecoveryModal.setBackProcess {
-                Dialog.show(DialogProps().apply {
-                    mainTitle = "Leave this page?"
-                    subTitle =
-                        "Are you sure you want to leave this page? All changes will not be saved."
-                    positiveCallback = {
-                        clearUp()
-                        WalletLifecyclePresenter.reset()
-                    }
-                })
-            }
-        } else {
-            SocialRecoveryModal.clearBackProcess()
-        }
-    }
     var errorMsg by UseState(initValue = "")
     var pinValue by UseState(initValue = "")
 

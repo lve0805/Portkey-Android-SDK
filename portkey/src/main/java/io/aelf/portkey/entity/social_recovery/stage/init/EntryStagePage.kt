@@ -321,29 +321,11 @@ internal fun enterInputEmailPage() {
     WalletLifecyclePresenter
         .SpecialStageIdentifier
         .CHOSE_TO_INPUT_EMAIL = true
-    SocialRecoveryModal.setBackProcess {
-        WalletLifecyclePresenter
-            .SpecialStageIdentifier
-            .CHOSE_TO_INPUT_EMAIL = false
-    }
 }
 
 internal fun leavesEntryPage() {
     WalletLifecyclePresenter
         .SpecialStageIdentifier.reset()
-    SocialRecoveryModal.setBackProcess(
-        function = {
-            Dialog.show(DialogProps().apply {
-                mainTitle = "Are you sure to go back?"
-                subTitle =
-                    "If you leave current page, you will lose all the progress and have to start over."
-                positiveCallback = {
-                    WalletLifecyclePresenter.reset()
-                    WalletLifecyclePresenter.inferCurrentStage()
-                }
-            })
-        }, goWithCleanItself = false
-    )
 }
 
 @Composable

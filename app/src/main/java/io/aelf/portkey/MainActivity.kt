@@ -17,8 +17,8 @@ import androidx.compose.ui.platform.LocalContext
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import io.aelf.portkey.component.stub.PortkeySDKViewStub
-import io.aelf.portkey.entity.social_recovery.SocialRecoveryModal
 import io.aelf.portkey.entity.social_recovery.SocialRecoveryModalProps
+import io.aelf.portkey.entity.social_recovery.callUpSocialRecoveryModal
 import io.aelf.portkey.entity.static.Portkey
 import io.aelf.portkey.init.InitProcessor
 import io.aelf.portkey.init.SDkInitConfig
@@ -85,7 +85,7 @@ class MainActivity : ComponentActivity() {
             config = ButtonConfig().apply {
                 text = "Call Up Dialog"
                 onClick = {
-                    SocialRecoveryModal.callUpModal(props)
+                    callUpSocialRecoveryModal(props)
                 }
             }
         )

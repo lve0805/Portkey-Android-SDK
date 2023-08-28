@@ -52,7 +52,6 @@ import io.aelf.portkey.sdk.R
 import io.aelf.portkey.tools.friendly.UseAndroidBackButtonSettings
 import io.aelf.portkey.tools.friendly.UseComponentDidMount
 import io.aelf.portkey.tools.friendly.UseEffect
-import io.aelf.portkey.ui.basic.Toast.showToast
 import io.aelf.portkey.ui.basic.ZIndexConfig
 import io.aelf.portkey.ui.button.ButtonConfig
 import io.aelf.portkey.ui.button.HugeButton
@@ -63,16 +62,17 @@ import io.aelf.portkey.ui.loading.Loading
 import io.aelf.portkey.ui.loading.Loading.PortkeyLoading
 import io.aelf.portkey.utils.log.GLogger
 import io.aelf.utils.AElfException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-object SocialRecoveryModal : ModalController {
+internal object SocialRecoveryModal : ModalController {
     private var isShow by mutableStateOf(false)
     private const val heightPercent = 0.85f
     private var backFunction: (() -> Unit)? by mutableStateOf(null)
     private var modalProps: SocialRecoveryModalProps = SocialRecoveryModalProps()
 
-    fun callUpModal(props: SocialRecoveryModalProps) {
+    internal fun callUpModal(props: SocialRecoveryModalProps) {
         this.modalProps = props
         isShow = true
     }
@@ -125,29 +125,21 @@ object SocialRecoveryModal : ModalController {
         })
     }
 
+    internal fun resetAndBackToHomePage() {
+        Dialog.show(DialogProps().apply {
+            mainTitle = "Leave this page?"
+            subTitle =
+                "Are you sure you want to leave this page? All the changes you made will be erased."
+            positiveCallback = {
+                WalletLifecyclePresenter.reset()
+            }
+        })
+    }
+
     internal fun forceCloseModal(exception: AElfException) {
         isShow = false
         WalletLifecyclePresenter.reset()
         modalProps.onError?.let { it(exception) }
-    }
-
-    internal fun goBack() {
-        backFunction?.let {
-            it()
-        }
-    }
-
-    override fun setBackProcess(goWithCleanItself: Boolean, function: () -> Unit) {
-        backFunction = {
-            function()
-            if (goWithCleanItself) {
-                backFunction = null
-            }
-        }
-    }
-
-    override fun clearBackProcess() {
-        backFunction = null
     }
 
     @Composable
@@ -160,31 +152,17 @@ object SocialRecoveryModal : ModalController {
         val scope = rememberCoroutineScope()
         if (isShow) {
             UseComponentDidMount {
-                Loading.showLoading("Checking existing wallet...")
-                scope.launch(Dispatchers.IO) {
-                    EntryBehaviourEntity.ifLockedWalletExists().let {
-                        if (it) {
-                            GLogger.t("locked wallet exists, trying to unlock")
-                            WalletLifecyclePresenter.unlock =
-                                EntryBehaviourEntity.attemptToGetLockedWallet().get()
-                            clearBackProcess()
-                        }
-                    }
-                    Loading.hideLoadingCoroutine(scope = this, duration = 800)
+                unlockWalletCheck(scope)
+            }
+            UseWatch()
+            UseAndroidBackButtonSettings {
+                backFunction?.let {
+                    it()
+                }
+                if (WalletLifecyclePresenter.stageEnum == SocialRecoveryStageEnum.INIT) {
+                    closeModal()
                 }
             }
-            UseEffect(
-                WalletLifecyclePresenter.wallet,
-                WalletLifecyclePresenter.entry,
-                WalletLifecyclePresenter.login,
-                WalletLifecyclePresenter.register,
-                WalletLifecyclePresenter.activeGuardian,
-                WalletLifecyclePresenter.setPin,
-                WalletLifecyclePresenter.unlock
-            ) {
-                WalletLifecyclePresenter.inferCurrentStage()
-            }
-            UseAndroidBackButtonSettings(::closeModal)
             Column(
                 modifier = Modifier
                     .zIndex(ZIndexConfig.Modal.getZIndex())
@@ -195,6 +173,70 @@ object SocialRecoveryModal : ModalController {
             ) {
                 ModalBody()
             }
+        }
+    }
+
+    @Composable
+    private fun UseWatch() {
+        UseEffect(
+            WalletLifecyclePresenter.wallet,
+            WalletLifecyclePresenter.entry,
+            WalletLifecyclePresenter.login,
+            WalletLifecyclePresenter.register,
+            WalletLifecyclePresenter.activeGuardian,
+            WalletLifecyclePresenter.SpecialStageIdentifier.CHOSE_TO_INPUT_EMAIL,
+            WalletLifecyclePresenter.setPin,
+            WalletLifecyclePresenter.unlock
+        ) {
+            WalletLifecyclePresenter.inferCurrentStage()
+            inferBackProcess()
+        }
+    }
+
+    private fun inferBackProcess() {
+        backFunction = when (WalletLifecyclePresenter.stageEnum) {
+            SocialRecoveryStageEnum.INIT -> {
+                if (WalletLifecyclePresenter.SpecialStageIdentifier.CHOSE_TO_INPUT_EMAIL) {
+                    {
+                        WalletLifecyclePresenter.SpecialStageIdentifier.CHOSE_TO_INPUT_EMAIL = false
+                    }
+                } else {
+                    null
+                }
+            }
+
+            SocialRecoveryStageEnum.READY_TO_REGISTER,
+            SocialRecoveryStageEnum.SET_PIN -> {
+                ::resetAndBackToHomePage
+            }
+
+            SocialRecoveryStageEnum.READY_TO_LOGIN -> {
+                if (WalletLifecyclePresenter.activeGuardian == null) {
+                    ::resetAndBackToHomePage
+                } else {
+                    {
+                        WalletLifecyclePresenter.activeGuardian = null
+                    }
+                }
+            }
+
+            else -> {
+                null
+            }
+        }
+    }
+
+    private fun unlockWalletCheck(scope: CoroutineScope) {
+        Loading.showLoading("Checking existing wallet...")
+        scope.launch(Dispatchers.IO) {
+            EntryBehaviourEntity.ifLockedWalletExists().let {
+                if (it) {
+                    GLogger.t("locked wallet exists, trying to unlock")
+                    WalletLifecyclePresenter.unlock =
+                        EntryBehaviourEntity.attemptToGetLockedWallet().get()
+                }
+            }
+            Loading.hideLoadingCoroutine(scope = this, duration = 800)
         }
     }
 
@@ -282,6 +324,7 @@ object SocialRecoveryModal : ModalController {
                         interactionSource = remember {
                             MutableInteractionSource()
                         },
+                        enabled = backFunction != null,
                         onClick = {
                             backFunction?.let {
                                 it()
@@ -309,8 +352,6 @@ object SocialRecoveryModal : ModalController {
 
 internal interface ModalController {
     fun closeModal()
-    fun clearBackProcess()
-    fun setBackProcess(goWithCleanItself: Boolean = true, function: () -> Unit)
 }
 
 open class SocialRecoveryModalProps {

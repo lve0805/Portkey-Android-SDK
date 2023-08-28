@@ -248,17 +248,6 @@ private fun GuardianInfoList() {
                         AccountOriginalType.Phone.name -> {
                             WalletLifecyclePresenter.activeGuardian =
                                 loginEntity!!.getGuardianBehaviourEntity(index)
-                            SocialRecoveryModal.setBackProcess {
-                                Dialog.show(DialogProps().apply {
-                                    mainTitle = "Confirm leave"
-                                    subTitle = "Are you sure you want to leave current page?"
-                                    positiveCallback = {
-                                        WalletLifecyclePresenter.activeGuardian = null
-                                        WalletLifecyclePresenter.inferCurrentStage()
-                                        cleanUp()
-                                    }
-                                })
-                            }
                         }
 
                         AccountOriginalType.Google.name -> {
