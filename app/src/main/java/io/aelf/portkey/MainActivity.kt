@@ -3,17 +3,19 @@ package io.aelf.portkey
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.biometric.BiometricPrompt
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
+import androidx.fragment.app.FragmentActivity
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import io.aelf.portkey.component.stub.PortkeySDKViewStub
@@ -24,6 +26,7 @@ import io.aelf.portkey.init.InitProcessor
 import io.aelf.portkey.init.SDkInitConfig
 import io.aelf.portkey.internal.tools.GlobalConfig
 import io.aelf.portkey.network.retrofit.RetrofitProvider
+import io.aelf.portkey.tools.biometric.launchBiometricVerify
 import io.aelf.portkey.tools.friendly.UseComponentDidMount
 import io.aelf.portkey.ui.basic.Toast
 import io.aelf.portkey.ui.button.ButtonConfig
@@ -33,7 +36,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Suppress("DEPRECATION")
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     private var googleAuthLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -81,14 +84,28 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-        HugeButton(
-            config = ButtonConfig().apply {
-                text = "Call Up Dialog"
-                onClick = {
-                    callUpSocialRecoveryModal(props)
+        Column() {
+            HugeButton(
+                config = ButtonConfig().apply {
+                    text = "Call Up Dialog"
+                    onClick = {
+                        callUpSocialRecoveryModal(props)
+                    }
                 }
-            }
-        )
+            )
+            HugeButton(
+                config = ButtonConfig().apply {
+                    text = "Call Up Biometric"
+                    onClick = {
+                        launchBiometricVerify(
+                            context = this@MainActivity,
+                            success = { it: BiometricPrompt.AuthenticationResult ->
+                                GLogger.w("onSuccess: $it")
+                            })
+                    }
+                }
+            )
+        }
         PortkeySDKViewStub()
     }
 

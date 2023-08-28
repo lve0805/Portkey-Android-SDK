@@ -18,7 +18,7 @@ android {
     packagingOptions.resources.excludes.add("META-INF/*.kotlin_module")
 
     defaultConfig {
-        minSdk = 26
+        minSdk = 28
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
     }
@@ -68,10 +68,12 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     implementation("io.github.oleksandrbalan:modalsheet:0.6.0")
-    implementation ("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1")
     implementation("io.coil-kt:coil-compose:2.4.0")
-    implementation ("org.bouncycastle:bcprov-jdk15on:1.67")
+    implementation("org.bouncycastle:bcprov-jdk15on:1.67")
+    implementation("androidx.biometric:biometric:1.2.0-alpha05")
+
 
 
     implementation("io.aelf:portkey-java-sdk:0.0.7-SNAPSHOT") {

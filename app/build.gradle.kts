@@ -43,7 +43,7 @@ android {
 
     defaultConfig {
         applicationId = "io.aelf.portkey"
-        minSdk = 26
+        minSdk = 28
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -111,6 +111,8 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     implementation(platform("com.google.firebase:firebase-bom:32.2.2"))
+    implementation("androidx.biometric:biometric:1.2.0-alpha05")
+
 
     implementation("io.aelf:portkey-java-sdk:0.0.7-SNAPSHOT") {
         isChanging = true

@@ -1,5 +1,8 @@
 package io.aelf.portkey.entity.social_recovery.stage.pin
 
+import android.content.Context
+import android.text.TextUtils
+import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -8,6 +11,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -25,146 +30,235 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.aelf.portkey.behaviour.entry.EntryBehaviourEntity
 import io.aelf.portkey.core.presenter.WalletLifecyclePresenter
 import io.aelf.portkey.entity.social_recovery.SocialRecoveryModal
+import io.aelf.portkey.internal.tools.GlobalConfig.StorageTags.TAG_PIN
 import io.aelf.portkey.sdk.R
+import io.aelf.portkey.storage.StorageProvider
+import io.aelf.portkey.tools.biometric.launchBiometricVerify
+import io.aelf.portkey.tools.friendly.DynamicWidth
+import io.aelf.portkey.tools.friendly.UseComponentDidMount
 import io.aelf.portkey.tools.friendly.UseComponentWillUnmount
-import io.aelf.portkey.tools.friendly.UseState
 import io.aelf.portkey.ui.basic.ErrorMsg
 import io.aelf.portkey.ui.basic.HugeTitle
-import io.aelf.portkey.utils.log.GLogger
+import io.aelf.portkey.ui.button.ButtonConfig
+import io.aelf.portkey.ui.button.HugeButton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 internal const val PIN_LENGTH = 6
+internal const val PIN_BIOMETRIC_KEY = "pin_biometric"
 
 private var repeat by mutableStateOf(false)
 private var repeatPinValue by mutableStateOf("")
+private var verifyBiometric by mutableStateOf(false)
+private var verifyBiometricErrorMsg by mutableStateOf("")
+private var type by mutableStateOf(PinPageType.CREATE)
+
+private var errorMsg by mutableStateOf("")
+private var pinValue by mutableStateOf("")
 
 private const val CONTROL_DELETE = "^"
 private const val CONTROL_BIOMETRIC = "&"
 
+@Synchronized
+fun setErrorMsgs(msg: String) {
+    errorMsg = msg
+}
+
+@Synchronized
+fun setPinValues(value: String) {
+    pinValue = value
+}
+
+@Synchronized
+fun setRepeatPinValues(value: String) {
+    repeatPinValue = value
+}
+
+@Synchronized
+fun setPinsValueByAppends(value: String, context: Context) {
+    if (repeat) {
+        if (repeatPinValue.length >= PIN_LENGTH) {
+            return
+        }
+        repeatPinValue += value
+        handlePinValue(CoroutineScope(Dispatchers.IO), context = context)
+    } else {
+        if (pinValue.length >= PIN_LENGTH) {
+            return
+        }
+        pinValue += value
+        handlePinValue(scope = CoroutineScope(Dispatchers.IO), context = context)
+    }
+}
+
+@Synchronized
+fun rmCharFromLast() {
+    setErrorMsgs("")
+    if (repeat) {
+        if (repeatPinValue.isNotEmpty()) {
+            repeatPinValue = repeatPinValue.substring(0, repeatPinValue.length - 1)
+        }
+    } else {
+        if (pinValue.isNotEmpty()) {
+            pinValue = pinValue.substring(0, pinValue.length - 1)
+        }
+    }
+}
+
 @Composable
-internal fun PinPagePresenter(type: PinPageType) {
-    if (type == PinPageType.VERIFY && !EntryBehaviourEntity.ifLockedWalletExists()) {
+internal fun PinPagePresenter(controlType: PinPageType) {
+    if (controlType == PinPageType.VERIFY && !EntryBehaviourEntity.ifLockedWalletExists()) {
         return
-    } else if (type == PinPageType.CREATE && WalletLifecyclePresenter.setPin == null) {
+    } else if (controlType == PinPageType.CREATE && WalletLifecyclePresenter.setPin == null) {
         return
     }
-    var errorMsg by UseState(initValue = "")
-    var pinValue by UseState(initValue = "")
 
-    GLogger.t("pin value is: $pinValue")
-
-    @Synchronized
-    fun setErrorMsg(msg: String) {
-        errorMsg = msg
+    UseComponentDidMount {
+        type = controlType
     }
 
-    @Synchronized
-    fun setPinValue(value: String) {
-        pinValue = value
-    }
+    val context = LocalContext.current
 
-    @Synchronized
-    fun setPinsValueByAppend(value: String) {
-        if (repeat) {
-            if (repeatPinValue.length >= PIN_LENGTH) {
-                return
-            }
-            GLogger.e("1")
-            repeatPinValue += value
-            handlePinValue(
-                pinValue,
-                ::setErrorMsg,
-                ::setPinValue,
-                CoroutineScope(Dispatchers.Main),
-                type
-            )
-        } else {
-            if (pinValue.length >= PIN_LENGTH) {
-                return
-            }
-            pinValue += value
-            handlePinValue(
-                pinValue,
-                ::setErrorMsg,
-                ::setPinValue,
-                CoroutineScope(Dispatchers.Main),
-                type
-            )
-        }
-    }
-
-    @Synchronized
-    fun rmCharFromLast() {
-        setErrorMsg("")
-        if (repeat) {
-            if (repeatPinValue.isNotEmpty()) {
-                repeatPinValue = repeatPinValue.substring(0, repeatPinValue.length - 1)
-            }
-        } else {
-            if (pinValue.isNotEmpty()) {
-                pinValue = pinValue.substring(0, pinValue.length - 1)
-            }
-        }
-    }
     UseComponentWillUnmount {
-        setPinValue("")
-        setErrorMsg("")
+        setPinValues("")
+        setErrorMsgs("")
         clearUp()
     }
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
-    ) {
-        FriendlyWelcomeTitle(type = type)
-        PinDisplay(pinValue)
-        ErrorMsg(
-            text = errorMsg,
-            alignToCenter = true,
-            paddingTop = 12,
-            paddingBottom = if (type == PinPageType.CREATE) 60 else 12
+    if (!verifyBiometric) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            FriendlyWelcomeTitle()
+            PinDisplay()
+            ErrorMsg(
+                text = errorMsg,
+                alignToCenter = true,
+                paddingTop = 12,
+                paddingBottom = if (type == PinPageType.CREATE) 60 else 12
+            )
+            PinInput()
+        }
+    } else {
+        Box(
+            modifier = Modifier
+                .fillMaxSize(),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .padding(top = 60.dp)
+                    .clickable(indication = null, interactionSource = remember {
+                        MutableInteractionSource()
+                    }) {
+                        useBiometric(
+                            context = context,
+                        )
+                    },
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.biometric_raw),
+                    contentDescription = "biometric icon",
+                    modifier = Modifier.size(100.dp),
+                    tint = Color(0xFF5B8EF4)
+                )
+                Text(
+                    text = "Enable biometric authentication",
+                    fontWeight = FontWeight(500),
+                    fontSize = 16.sp,
+                    lineHeight = 24.sp,
+                    textAlign = TextAlign.Center,
+                    color = Color(0xFF162736),
+                    modifier = Modifier.padding(top = 40.dp)
+                )
+                ErrorMsg(
+                    text = verifyBiometricErrorMsg, alignToCenter = true, paddingTop = 24
+                )
+            }
+            LeaveBiometricVerifyButton()
+        }
+    }
+}
+
+@Composable
+private fun PinInput() {
+    listOf("123", "456", "789", CONTROL_BIOMETRIC + "0" + CONTROL_DELETE).map {
+        PinInputLine(
+            controlValue = it,
         )
-        PinInput(
-            type = type,
-            setPinsValueByAppend = ::setPinsValueByAppend,
-            rmCharFromLast = ::rmCharFromLast
+    }
+}
+
+private fun useBiometric(
+    context: Context,
+) {
+    CoroutineScope(Dispatchers.Main).launch {
+        launchBiometricVerify(
+            context = context,
+            success = success@{
+                if (type == PinPageType.VERIFY) {
+                    val extraPinValue = getExtraPinValue()
+                    if (TextUtils.isEmpty(extraPinValue)) {
+                        setErrorMsgs("biometric verify failed, please try again")
+                        return@success
+                    } else {
+                        checkPinVerifyFromBioPin(extraPinValue)
+                    }
+                } else {
+                    onFinish(it)
+                }
+            },
+            fail = {
+                errorMsg = "Biometric verify failed, please try again"
+            }
         )
     }
 }
 
 @Composable
-private fun PinInput(
-    type: PinPageType,
-    setPinsValueByAppend: (String) -> Unit,
-    rmCharFromLast: () -> Unit
-) {
-    listOf("123", "456", "789", CONTROL_BIOMETRIC + "0" + CONTROL_DELETE).map {
-        PinInputLine(
-            type = type,
-            controlValue = it,
-            setPinsValueByAppend = setPinsValueByAppend,
-            rmCharFromLast = rmCharFromLast
+private fun LeaveBiometricVerifyButton() {
+    Column(
+        modifier = Modifier
+            .width(DynamicWidth(paddingHorizontal = 20))
+            .fillMaxHeight(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Bottom
+    ) {
+        HugeButton(
+            config = ButtonConfig().apply {
+                text = "Skip"
+                onClick = {
+                    verifyBiometric = false
+                    onFinish()
+                }
+                bgColor = Color.White
+                textColor = Color.Black
+            },
         )
     }
 }
 
 @Composable
 private fun PinInputLine(
-    type: PinPageType,
     controlValue: String,
-    setPinsValueByAppend: (String) -> Unit,
-    rmCharFromLast: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -176,10 +270,7 @@ private fun PinInputLine(
     ) {
         controlValue.forEach {
             PinInputItem(
-                type = type,
                 controlValue = it.toString(),
-                setPinsValueByAppend = setPinsValueByAppend,
-                rmCharFromLast = rmCharFromLast
             )
         }
     }
@@ -187,28 +278,28 @@ private fun PinInputLine(
 
 @Composable
 private fun PinInputItem(
-    type: PinPageType,
     controlValue: String,
-    setPinsValueByAppend: (String) -> Unit,
-    rmCharFromLast: () -> Unit
 ) {
+    val context = LocalContext.current
     val regex0To9 = "[0-9]".toRegex()
     fun handleClick() {
         if (regex0To9.matches(controlValue)) {
-            setPinsValueByAppend(controlValue)
+            setPinsValueByAppends(controlValue, context)
         } else if (CONTROL_DELETE == controlValue) {
             rmCharFromLast()
         } else if (CONTROL_BIOMETRIC == controlValue) {
-            // TODO:CONTROL_BIOMETRIC
+            useBiometric(
+                context = context,
+            )
         }
     }
 
     if (CONTROL_BIOMETRIC == controlValue) {
+        val containsExtraPin = StorageProvider.getHandler().contains(PIN_BIOMETRIC_KEY)
         val modifier = Modifier
             .size(70.dp)
             .background(Color.Transparent)
-            .padding(horizontal = 16.dp)
-        if (type == PinPageType.CREATE) {
+        if (type == PinPageType.CREATE || !containsExtraPin) {
             Box(modifier = modifier)
         } else {
             Row(
@@ -226,7 +317,13 @@ private fun PinInputItem(
                     contentDescription = "BIOMETRIC icon",
                     modifier = Modifier
                         .size(70.dp)
-                        .clickable(enabled = type == PinPageType.VERIFY) {
+                        .clickable(
+                            enabled = type == PinPageType.VERIFY,
+                            indication = null,
+                            interactionSource = remember {
+                                MutableInteractionSource()
+                            }
+                        ) {
                             handleClick()
                         }
                 )
@@ -277,7 +374,7 @@ private fun PinInputItem(
 }
 
 @Composable
-private fun FriendlyWelcomeTitle(type: PinPageType) {
+private fun FriendlyWelcomeTitle() {
     if (type == PinPageType.CREATE) {
         HugeTitle(text = if (repeat) "Confirm Pin" else "Enter pin to protect your device")
     } else {
@@ -301,7 +398,7 @@ private fun FriendlyWelcomeTitle(type: PinPageType) {
 }
 
 @Composable
-private fun PinDisplay(pinValue: String) {
+private fun PinDisplay() {
     val length = if (repeat) repeatPinValue.length else pinValue.length
     Row(
         modifier = Modifier
@@ -331,77 +428,98 @@ private fun PinDisplay(pinValue: String) {
 }
 
 private fun handlePinValue(
-    pin: String,
-    errorMsgSetter: (String) -> Unit,
-    pinSetter: (String) -> Unit,
     scope: CoroutineScope,
-    type: PinPageType
+    context: Context
 ) {
-    errorMsgSetter("")
+    setErrorMsgs("")
     if (repeat) {
         if (repeatPinValue.length != PIN_LENGTH) {
             return
         }
     } else {
-        if (pin.length != PIN_LENGTH) {
+        if (pinValue.length != PIN_LENGTH) {
             return
         }
     }
-    checkPin(pin, errorMsgSetter, pinSetter, scope, type)
+    checkPin(scope, context)
 }
 
 private fun checkPin(
-    pin: String,
-    errorMsgSetter: (String) -> Unit,
-    pinSetter: (String) -> Unit,
     scope: CoroutineScope,
-    type: PinPageType
+    context: Context
 ) {
     scope.launch(Dispatchers.IO) {
         if (type == PinPageType.CREATE) {
-            checkPinCreate(pin, errorMsgSetter, pinSetter)
+            checkPinCreate(context = context)
         } else {
-            checkPinVerify(pin, errorMsgSetter, pinSetter)
+            checkPinVerify()
         }
     }
 }
 
-private fun checkPinCreate(
-    pin: String,
-    errorMsgSetter: (String) -> Unit,
-    pinSetter: (String) -> Unit
-) {
+private fun checkPinCreate(context: Context) {
     val setPin = WalletLifecyclePresenter.setPin ?: return
     if (repeat) {
-        if (repeatPinValue != pin) {
-            clearAndReportErrRepeat(errorMsgSetter, "pin not match")
+        if (repeatPinValue != pinValue) {
+            clearAndReportErrRepeat("pin not match")
             return
         }
     } else {
-        val result = setPin.isValidPin(pin)
+        val result = setPin.isValidPin(pinValue)
         if (!result) {
-            clearAndReportErr(errorMsgSetter, pinSetter, "invalid pin")
+            clearAndReportErr("invalid pin")
             return
         }
         repeat = true
         return
     }
-    WalletLifecyclePresenter.wallet = setPin.lockAndGetWallet(pin)
-    pinSetter("")
+    verifyBiometric = true
+    useBiometric(context = context)
+}
+
+private fun onFinish(biometric: BiometricPrompt.AuthenticationResult? = null) {
+    val setPin = WalletLifecyclePresenter.setPin ?: return
+    if (!setPin.isValidPin(pinValue) || pinValue != repeatPinValue) {
+        return
+    }
+    WalletLifecyclePresenter.wallet = setPin.lockAndGetWallet(pinValue)
+    if (biometric != null) {
+        extraPinValueStorage()
+    }
     clearUp()
     SocialRecoveryModal.onSuccess()
 }
 
 
-private fun checkPinVerify(
-    pin: String,
-    errorMsgSetter: (String) -> Unit,
-    pinSetter: (String) -> Unit
-) {
+private fun extraPinValueStorage() {
+    val handler = StorageProvider.getHandler()
+    handler.putValue(PIN_BIOMETRIC_KEY, "verified")
+}
+
+private fun getExtraPinValue(): String {
+    val handler = StorageProvider.getHandler()
+    if (handler.headValue(PIN_BIOMETRIC_KEY, "verified")) {
+        return handler.getValue(TAG_PIN)
+    }
+    return ""
+}
+
+private fun checkPinVerify() {
+    val unlock = WalletLifecyclePresenter.unlock ?: return
+    val result = unlock.checkPin(pinValue)
+    if (!result) {
+        clearAndReportErr("incorrect pin")
+        return
+    }
+    WalletLifecyclePresenter.wallet = unlock.unlockAndBuildWallet(pinValue)
+    SocialRecoveryModal.onSuccess()
+}
+
+private fun checkPinVerifyFromBioPin(pin: String) {
     val unlock = WalletLifecyclePresenter.unlock ?: return
     val result = unlock.checkPin(pin)
     if (!result) {
-        clearAndReportErr(errorMsgSetter, pinSetter, "incorrect pin")
+        setErrorMsgs("internal err")
         return
     }
     WalletLifecyclePresenter.wallet = unlock.unlockAndBuildWallet(pin)
@@ -409,27 +527,27 @@ private fun checkPinVerify(
 }
 
 private fun clearAndReportErrRepeat(
-    errorMsgSetter: (String) -> Unit,
     errMsg: String
 ) {
-    repeatPinValue = ""
-    errorMsgSetter(errMsg)
+    setRepeatPinValues("")
+    setErrorMsgs(errMsg)
     return
 }
 
-private fun clearAndReportErr(
-    errorMsgSetter: (String) -> Unit,
-    pinSetter: (String) -> Unit,
-    errMsg: String
-) {
-    pinSetter("")
-    errorMsgSetter(errMsg)
+private fun clearAndReportErr(errMsg: String) {
+    setPinValues("")
+    setErrorMsgs(errMsg)
     return
 }
 
 private fun clearUp() {
+    pinValue = ""
+    errorMsg = ""
+    type = PinPageType.CREATE
     repeat = false
     repeatPinValue = ""
+    verifyBiometric = false
+    verifyBiometricErrorMsg = ""
 }
 
 internal enum class PinPageType {
