@@ -80,11 +80,14 @@ internal fun GuardianPage() {
 @Composable
 private fun RegisterPageBody() {
     fun decorateIntroductionText(): String {
+        val accountMsg =
+            WalletLifecyclePresenter.register?.config?.accountIdentifier
+                ?: WalletLifecyclePresenter.login?.accountIdentifier
+                ?: "your phone/email"
         return "A 6-digit code " +
                 (if (sent) "was sent" else "will be sent") +
                 " to #" +
-                (WalletLifecyclePresenter.register?.config?.accountIdentifier
-                    ?: "your phone/email") +
+                (accountMsg) +
                 "#.\n " +
                 (if (sent) "Enter it within 10 minutes." else "Click the button below to send it.")
     }

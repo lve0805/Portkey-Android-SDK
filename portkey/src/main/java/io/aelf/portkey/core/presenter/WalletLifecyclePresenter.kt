@@ -4,6 +4,7 @@ import android.text.TextUtils
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import io.aelf.portkey.behaviour.entry.EntryBehaviourEntity
 import io.aelf.portkey.behaviour.guardian.GuardianBehaviourEntity
 import io.aelf.portkey.behaviour.login.LoginBehaviourEntity
@@ -21,8 +22,8 @@ internal object WalletLifecyclePresenter {
     internal var activeGuardian: GuardianBehaviourEntity? by mutableStateOf(null)
     internal var setPin: SetPinBehaviourEntity? by mutableStateOf(null)
     internal var wallet: PortkeyWallet? by mutableStateOf(null)
-
     internal var unlock: WalletUnlockEntity? by mutableStateOf(null)
+    internal var cachedGoogleSignInAccount: GoogleSignInAccount? by mutableStateOf(null)
 
     internal var stageEnum by mutableStateOf(SocialRecoveryStageEnum.INIT)
 

@@ -94,7 +94,7 @@ class MainActivity : ComponentActivity() {
 
     internal fun initDebug(context: Context) {
         InitProcessor.init(SDkInitConfig.Builder().build(), context)
-        RetrofitProvider.resetOrInitMainRetrofit("https://localtest-applesign2.portkey.finance")
+        RetrofitProvider.resetOrInitMainRetrofit("https://localtest-applesign.portkey.finance")
         GlobalConfig.setTestEnv(true)
     }
 

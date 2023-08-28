@@ -79,6 +79,7 @@ internal object SocialRecoveryModal : ModalController {
 
     internal fun sendGoogleToken(googleAccount: GoogleSignInAccount?) {
         Loading.hideLoading(2000)
+        WalletLifecyclePresenter.cachedGoogleSignInAccount = googleAccount
         if (googleAccount == null || TextUtils.isEmpty(googleAccount?.id)) {
             Dialog.show(DialogProps().apply {
                 mainTitle = "Google Auth Failure"
@@ -132,6 +133,17 @@ internal object SocialRecoveryModal : ModalController {
                 "Are you sure you want to leave this page? All the changes you made will be erased."
             positiveCallback = {
                 WalletLifecyclePresenter.reset()
+            }
+        })
+    }
+
+    internal fun leaveCurrentGuardianPage() {
+        Dialog.show(DialogProps().apply {
+            mainTitle = "Leave this page?"
+            subTitle =
+                "Are you sure you want to leave this page? All the changes you made will be erased."
+            positiveCallback = {
+                WalletLifecyclePresenter.activeGuardian = null
             }
         })
     }
@@ -214,9 +226,7 @@ internal object SocialRecoveryModal : ModalController {
                 if (WalletLifecyclePresenter.activeGuardian == null) {
                     ::resetAndBackToHomePage
                 } else {
-                    {
-                        WalletLifecyclePresenter.activeGuardian = null
-                    }
+                    ::leaveCurrentGuardianPage
                 }
             }
 

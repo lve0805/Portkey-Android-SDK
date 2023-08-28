@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import io.aelf.portkey.behaviour.guardian.GuardianBehaviourEntity
+import io.aelf.portkey.core.presenter.WalletLifecyclePresenter
 import io.aelf.portkey.internal.model.common.AccountOriginalType
 import io.aelf.portkey.internal.model.guardian.GuardianDTO
 import io.aelf.portkey.sdk.R
@@ -129,8 +130,7 @@ private fun Icons(info: GuardianDTO) {
                 modifier = Modifier
                     .size(28.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF5B8EF4))
-                ,
+                    .background(Color(0xFF5B8EF4)),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -176,8 +176,12 @@ private fun Icons(info: GuardianDTO) {
 
 @Composable
 private fun Texts(info: GuardianDTO) {
-    val guardianName = info.name
-    val guardianIdentifier = info.guardianIdentifier
+    val guardianName = info.name ?: info.type
+    var guardianIdentifier = info.guardianIdentifier
+    val googleAccount = WalletLifecyclePresenter.cachedGoogleSignInAccount
+    if (info.type == AccountOriginalType.Google.name && googleAccount != null) {
+        guardianIdentifier = googleAccount.email
+    }
     Column(
         modifier = Modifier
             .wrapContentHeight()
@@ -187,7 +191,7 @@ private fun Texts(info: GuardianDTO) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = guardianName ?: info.type,
+            text = guardianName,
             maxLines = if (TextUtils.isEmpty(guardianIdentifier)) 2 else 1,
             fontSize = 14.sp,
             textAlign = TextAlign.Start,

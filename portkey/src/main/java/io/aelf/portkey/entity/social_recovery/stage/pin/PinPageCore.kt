@@ -33,12 +33,10 @@ import io.aelf.portkey.behaviour.entry.EntryBehaviourEntity
 import io.aelf.portkey.core.presenter.WalletLifecyclePresenter
 import io.aelf.portkey.entity.social_recovery.SocialRecoveryModal
 import io.aelf.portkey.sdk.R
-import io.aelf.portkey.tools.friendly.UseComponentDidMount
+import io.aelf.portkey.tools.friendly.UseComponentWillUnmount
 import io.aelf.portkey.tools.friendly.UseState
 import io.aelf.portkey.ui.basic.ErrorMsg
 import io.aelf.portkey.ui.basic.HugeTitle
-import io.aelf.portkey.ui.dialog.Dialog
-import io.aelf.portkey.ui.dialog.DialogProps
 import io.aelf.portkey.utils.log.GLogger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -64,18 +62,20 @@ internal fun PinPagePresenter(type: PinPageType) {
 
     GLogger.t("pin value is: $pinValue")
 
+    @Synchronized
     fun setErrorMsg(msg: String) {
         errorMsg = msg
     }
 
+    @Synchronized
     fun setPinValue(value: String) {
         pinValue = value
     }
 
+    @Synchronized
     fun setPinsValueByAppend(value: String) {
         if (repeat) {
             if (repeatPinValue.length >= PIN_LENGTH) {
-                repeatPinValue = repeatPinValue.substring(0, PIN_LENGTH - 1)
                 return
             }
             GLogger.e("1")
@@ -89,7 +89,6 @@ internal fun PinPagePresenter(type: PinPageType) {
             )
         } else {
             if (pinValue.length >= PIN_LENGTH) {
-                pinValue = pinValue.substring(0, PIN_LENGTH - 1)
                 return
             }
             pinValue += value
@@ -103,6 +102,7 @@ internal fun PinPagePresenter(type: PinPageType) {
         }
     }
 
+    @Synchronized
     fun rmCharFromLast() {
         setErrorMsg("")
         if (repeat) {
@@ -114,6 +114,11 @@ internal fun PinPagePresenter(type: PinPageType) {
                 pinValue = pinValue.substring(0, pinValue.length - 1)
             }
         }
+    }
+    UseComponentWillUnmount {
+        setPinValue("")
+        setErrorMsg("")
+        clearUp()
     }
     Column(
         modifier = Modifier
@@ -369,7 +374,7 @@ private fun checkPinCreate(
     val setPin = WalletLifecyclePresenter.setPin ?: return
     if (repeat) {
         if (repeatPinValue != pin) {
-            clearAndReportErr(errorMsgSetter, pinSetter, "pin not match")
+            clearAndReportErrRepeat(errorMsgSetter, "pin not match")
             return
         }
     } else {
@@ -382,6 +387,8 @@ private fun checkPinCreate(
         return
     }
     WalletLifecyclePresenter.wallet = setPin.lockAndGetWallet(pin)
+    pinSetter("")
+    clearUp()
     SocialRecoveryModal.onSuccess()
 }
 
@@ -399,6 +406,15 @@ private fun checkPinVerify(
     }
     WalletLifecyclePresenter.wallet = unlock.unlockAndBuildWallet(pin)
     SocialRecoveryModal.onSuccess()
+}
+
+private fun clearAndReportErrRepeat(
+    errorMsgSetter: (String) -> Unit,
+    errMsg: String
+) {
+    repeatPinValue = ""
+    errorMsgSetter(errMsg)
+    return
 }
 
 private fun clearAndReportErr(
