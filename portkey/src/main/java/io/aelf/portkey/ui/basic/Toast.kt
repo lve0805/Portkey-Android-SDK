@@ -3,6 +3,9 @@ package io.aelf.portkey.ui.basic
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 object Toast {
     @Composable
@@ -16,10 +19,12 @@ object Toast {
     }
 
     fun showToast(context: Context, text: String) {
-        android.widget.Toast.makeText(
-            context,
-            text,
-            android.widget.Toast.LENGTH_SHORT
-        ).show()
+        CoroutineScope(Dispatchers.Main).launch {
+            android.widget.Toast.makeText(
+                context,
+                text,
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 }

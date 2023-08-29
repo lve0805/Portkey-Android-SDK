@@ -1,6 +1,7 @@
 package io.aelf.portkey.entity.static.guardian_controller
 
 import android.text.TextUtils
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -41,6 +42,7 @@ import io.aelf.portkey.tools.friendly.DynamicWidth
 import io.aelf.portkey.ui.basic.ZIndexConfig
 import io.aelf.portkey.ui.button.ButtonConfig
 import io.aelf.portkey.ui.button.TinyButton
+import io.aelf.portkey.utils.log.GLogger
 
 @Composable
 internal fun GuardianController(info: GuardianInfo, modifier: Modifier = Modifier) {
@@ -94,13 +96,13 @@ private fun Content(info: GuardianInfo) {
         val guardianDTO = info.guardianEntity!!.originalGuardianInfo
         Row(
             modifier = Modifier
-                .width(DynamicWidth(paddingHorizontal = 32))
+                .width(DynamicWidth(paddingHorizontal = 31))
                 .wrapContentHeight(),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icons(guardianDTO)
-            Texts(guardianDTO)
+            Texts(guardianDTO, info.state)
             Actions(info)
         }
     }
@@ -162,11 +164,11 @@ private fun Icons(info: GuardianDTO) {
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
+                Image(
                     painter = painterResource(id = getSubIconResource(info.type)),
                     contentDescription = "guardian type icon : " + info.type,
                     modifier = Modifier
-                        .size(16.dp)
+                        .size(16.dp),
                 )
             }
         }
@@ -174,9 +176,9 @@ private fun Icons(info: GuardianDTO) {
 }
 
 @Composable
-private fun Texts(info: GuardianDTO) {
-    val guardianName = info.name ?: info.type
-    var guardianIdentifier = info.guardianIdentifier
+private fun Texts(info: GuardianDTO, state: OutsideStateEnum) {
+    val guardianName = getGuardianName(info)
+    val guardianIdentifier = getGuardianIdentifier(info)
     Column(
         modifier = Modifier
             .wrapContentHeight()
@@ -186,16 +188,16 @@ private fun Texts(info: GuardianDTO) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = guardianName,
+            text = if (state != OutsideStateEnum.Register) guardianName else guardianIdentifier,
             maxLines = if (TextUtils.isEmpty(guardianIdentifier)) 2 else 1,
             fontSize = 14.sp,
             textAlign = TextAlign.Start,
             lineHeight = 22.sp,
             color = Color(0xFF162736),
-            fontWeight = FontWeight(500),
+            fontWeight = FontWeight.ExtraBold,
             overflow = TextOverflow.Ellipsis,
         )
-        if (!TextUtils.isEmpty(guardianIdentifier)) {
+        if (!TextUtils.isEmpty(guardianIdentifier) && state != OutsideStateEnum.Register) {
             Text(
                 text = guardianIdentifier,
                 maxLines = 1,
@@ -210,8 +212,43 @@ private fun Texts(info: GuardianDTO) {
     }
 }
 
+private fun getGuardianName(info: GuardianDTO): String {
+    return when (info.type) {
+        AccountOriginalType.Google.name -> {
+            info.firstName ?: info.type
+        }
+
+        AccountOriginalType.Apple.name -> {
+            // TODO
+            info.firstName ?: info.type
+        }
+
+        else -> {
+            info.name ?: info.type
+        }
+    }
+}
+
+private fun getGuardianIdentifier(info: GuardianDTO): String {
+    return when (info.type) {
+        AccountOriginalType.Google.name -> {
+            info.thirdPartyEmail ?: info.type
+        }
+
+        AccountOriginalType.Apple.name -> {
+            // TODO
+            info.thirdPartyEmail ?: info.type
+        }
+
+        else -> {
+            info.guardianIdentifier ?: info.type
+        }
+    }
+}
+
 @Composable
 private fun Actions(info: GuardianInfo) {
+    GLogger.i("HAHA")
     val state = info.state
     if (state != OutsideStateEnum.Normal && state != OutsideStateEnum.LimitReached) {
         when (state) {
@@ -222,7 +259,9 @@ private fun Actions(info: GuardianInfo) {
                     lineHeight = 18.sp,
                     color = Color(0xFF8F949C),
                     fontWeight = FontWeight(500),
-                    modifier = Modifier.padding(start = 20.dp)
+                    modifier = Modifier.padding(start = 20.dp),
+                    maxLines = 1,
+                    overflow = TextOverflow.Visible
                 )
             }
 
@@ -243,7 +282,8 @@ private fun Actions(info: GuardianInfo) {
                 Icon(
                     painter = painterResource(id = R.drawable.verified),
                     contentDescription = "verified icon",
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(16.dp),
+                    tint = Color(0xFF20CD85)
                 )
             }
         } else {
@@ -276,7 +316,7 @@ private fun getSubIconResource(accountOriginalType: AccountOriginalType): Int {
     return when (accountOriginalType) {
         AccountOriginalType.Email -> R.drawable.email_small_icon
         AccountOriginalType.Apple -> R.drawable.apple_small_icon
-        AccountOriginalType.Google -> R.drawable.google_small_icon
+        AccountOriginalType.Google -> R.drawable.google_small_icon_raw
         AccountOriginalType.Phone -> R.drawable.phone_small_icon
         else -> R.drawable.portkey_small_icon
     }
@@ -309,7 +349,8 @@ private fun GuardianControllerPreview() {
             },
             0,
             { },
-            AccountOriginalType.Email
+            AccountOriginalType.Email,
+            false
         )
         buttonClick = { }
 //        state = OutsideStateEnum.Expired

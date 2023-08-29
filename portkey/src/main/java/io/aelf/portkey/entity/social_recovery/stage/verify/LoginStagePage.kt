@@ -233,9 +233,10 @@ private fun GuardianInfoList() {
     val guardians =
         guardiansOriginal.mapIndexed { index, info ->
             GuardianInfo().apply {
-                guardianEntity = loginEntity.getGuardianBehaviourEntity(index)
+                val thisGuardian = loginEntity.getGuardianBehaviourEntity(index)
+                guardianEntity = thisGuardian
                 state = if (isExpired) OutsideStateEnum.Expired
-                else if (loginEntity!!.isFulfilled) OutsideStateEnum.LimitReached
+                else if (loginEntity.isFulfilled) OutsideStateEnum.LimitReached
                 else OutsideStateEnum.Normal
                 buttonClick = {
                     when (info.originalData.type) {
@@ -243,12 +244,12 @@ private fun GuardianInfoList() {
                         AccountOriginalType.Apple.name,
                         AccountOriginalType.Phone.name -> {
                             WalletLifecyclePresenter.activeGuardian =
-                                loginEntity.getGuardianBehaviourEntity(index)
+                                thisGuardian
                         }
 
                         AccountOriginalType.Google.name -> {
                             scope.launch(Dispatchers.IO) {
-                                googleGuardianVerify(scope, index, context)
+                                googleGuardianVerify(scope, thisGuardian, context)
                             }
                         }
                     }
@@ -275,11 +276,13 @@ private fun GuardianInfoList() {
     }
 }
 
-private suspend fun googleGuardianVerify(scope: CoroutineScope, index: Int, context: Context) {
+private suspend fun googleGuardianVerify(
+    scope: CoroutineScope,
+    guardian: GuardianBehaviourEntity,
+    context: Context
+) {
     Loading.showLoading("Verifying...")
     val job = scope.launch(Dispatchers.IO) {
-        val guardian: GuardianBehaviourEntity =
-            WalletLifecyclePresenter.login!!.getGuardianBehaviourEntity(index)
         // google's guardian
         try {
             val result = guardian.verifyVerificationCode("FAKE")
@@ -299,7 +302,7 @@ private suspend fun googleGuardianVerify(scope: CoroutineScope, index: Int, cont
             negativeText = "Cancel"
             positiveCallback = {
                 scope.launch(Dispatchers.IO) {
-                    googleGuardianVerify(scope, index, context)
+                    googleGuardianVerify(scope, guardian, context)
                 }
             }
         })
@@ -307,7 +310,7 @@ private suspend fun googleGuardianVerify(scope: CoroutineScope, index: Int, cont
     }
     useTimeout(job = job, restart = {
         scope.launch(Dispatchers.IO) {
-            googleGuardianVerify(scope, index, context)
+            googleGuardianVerify(scope, guardian, context)
         }
     })
 }

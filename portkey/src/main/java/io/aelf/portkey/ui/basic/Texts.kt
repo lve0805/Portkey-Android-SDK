@@ -25,7 +25,7 @@ internal fun HugeTitle(text: String) {
             color = Color(0xFF162736),
             lineHeight = 28.sp
         ),
-        fontWeight = FontWeight(700),
+        fontWeight = FontWeight(900),
         textAlign = TextAlign.End
     )
 }

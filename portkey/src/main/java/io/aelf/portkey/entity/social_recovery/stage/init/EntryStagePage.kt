@@ -189,39 +189,52 @@ private suspend fun authCheck(
                 },
                 googleAccount
             )
-        Loading.hideLoading()
         if (entry.isRegistered) {
             entry.asLogInChain().onLoginStep {
+                Loading.hideLoading()
                 WalletLifecyclePresenter.login = it
                 leavesEntryPage()
             }
         } else {
+            Loading.hideLoading()
             Dialog.show(DialogProps().apply {
                 mainTitle = "Continue with this Account?"
                 subTitle =
                     "This account has not been registered yet. Click \"Confirm\" to complete the registration."
                 positiveCallback = {
                     entry.asRegisterChain().onRegisterStep {
-                        scope.launch(Dispatchers.IO) {
+                        if (googleAccount == null) {
                             Loading.showLoading("Checking on-chain data...")
-                            try {
-                                WalletLifecyclePresenter.activeGuardian = it.guardian
-                            } catch (e: Throwable) {
-                                GLogger.e(
-                                    "error when checking register guardian info.",
-                                    AElfException(e)
-                                )
+                            scope.launch(Dispatchers.IO) {
+                                try {
+                                    WalletLifecyclePresenter.activeGuardian = it.guardian
+                                } catch (e: Throwable) {
+                                    GLogger.e(
+                                        "error when checking register guardian info.",
+                                        AElfException(e)
+                                    )
+                                }
+                                Loading.hideLoading()
+                                if (WalletLifecyclePresenter.activeGuardian == null) {
+                                    showToast(
+                                        context,
+                                        "Sorry but the sever was not responding, please try again later."
+                                    )
+                                } else {
+                                    WalletLifecyclePresenter.register = it
+                                }
+                                leavesEntryPage()
+                            }
+                        } else {
+                            // Google account registration
+                            val result = it.guardian.verifyVerificationCode("FAKE")
+                            if (result) {
+                                WalletLifecyclePresenter.setPin = it.afterVerified()
+                                leavesEntryPage()
+                            }else{
+                                showToast(context, "Sorry but the sever was not responding, please try again later.")
                             }
                             Loading.hideLoading()
-                            if (WalletLifecyclePresenter.activeGuardian == null) {
-                                showToast(
-                                    context,
-                                    "Sorry but the sever was not responding, please try again later."
-                                )
-                            } else {
-                                WalletLifecyclePresenter.register = it
-                            }
-                            leavesEntryPage()
                         }
                     }
                 }
@@ -310,16 +323,20 @@ internal fun continueWithGoogleToken(googleAccount: GoogleSignInAccount) {
             { token, scope, context ->
                 run {
                     scope.launch(Dispatchers.IO) {
-                        val accessToken = NetworkService.getInstance()
-                            .getGoogleAuthResult(googleAccount.serverAuthCode ?: "")
-                            .access_token
-                        authCheck(
-                            token,
-                            scope,
-                            context,
-                            AccountOriginalType.Google,
-                            convertGoogleAccount(googleAccount, accessToken)
-                        )
+                        try {
+                            val accessToken = NetworkService.getInstance()
+                                .getGoogleAuthResult(googleAccount.serverAuthCode ?: "")
+                                .access_token
+                            authCheck(
+                                token,
+                                scope,
+                                context,
+                                AccountOriginalType.Google,
+                                convertGoogleAccount(googleAccount, accessToken)
+                            )
+                        } catch (e: Throwable) {
+                            Loading.hideLoading()
+                        }
                     }
                 }
             }, googleAccount.id ?: ""
