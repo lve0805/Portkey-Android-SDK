@@ -79,8 +79,7 @@ internal object SocialRecoveryModal : ModalController {
 
     internal fun sendGoogleToken(googleAccount: GoogleSignInAccount?) {
         Loading.hideLoading(2000)
-        WalletLifecyclePresenter.cachedGoogleSignInAccount = googleAccount
-        if (googleAccount == null || TextUtils.isEmpty(googleAccount?.id)) {
+        if (googleAccount == null || TextUtils.isEmpty(googleAccount.id)) {
             Dialog.show(DialogProps().apply {
                 mainTitle = "Google Auth Failure"
                 subTitle = "Sorry, we can't get your Google Account at this time, please try again."
@@ -91,17 +90,10 @@ internal object SocialRecoveryModal : ModalController {
                 }
             })
         } else {
-            continueWithGoogleToken(convertGoogleAccount(googleAccount))
+            continueWithGoogleToken(googleAccount)
         }
     }
 
-    private fun convertGoogleAccount(googleAccount: GoogleSignInAccount): GoogleAccount {
-        return GoogleAccount().apply {
-            id = googleAccount.id
-            email = googleAccount.email
-            idToken = googleAccount.idToken
-        }
-    }
 
     internal fun onSuccess() {
         isShow = false
@@ -168,11 +160,12 @@ internal object SocialRecoveryModal : ModalController {
             }
             UseWatch()
             UseAndroidBackButtonSettings {
-                backFunction?.let {
-                    it()
-                }
                 if (WalletLifecyclePresenter.stageEnum == SocialRecoveryStageEnum.INIT) {
                     closeModal()
+                } else {
+                    backFunction?.let {
+                        it()
+                    }
                 }
             }
             Column(

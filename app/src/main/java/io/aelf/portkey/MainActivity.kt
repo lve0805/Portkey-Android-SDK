@@ -20,7 +20,6 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import io.aelf.portkey.component.stub.PortkeySDKViewStub
 import io.aelf.portkey.entity.social_recovery.SocialRecoveryModalProps
-import io.aelf.portkey.entity.social_recovery.callUpSocialRecoveryModal
 import io.aelf.portkey.entity.static.Portkey
 import io.aelf.portkey.init.InitProcessor
 import io.aelf.portkey.init.SDkInitConfig
@@ -89,7 +88,7 @@ class MainActivity : FragmentActivity() {
                 config = ButtonConfig().apply {
                     text = "Call Up Dialog"
                     onClick = {
-                        callUpSocialRecoveryModal(props)
+                        Portkey.callUpSocialRecoveryModel(props)
                     }
                 }
             )
@@ -111,20 +110,14 @@ class MainActivity : FragmentActivity() {
 
     internal fun initDebug(context: Context) {
         InitProcessor.init(SDkInitConfig.Builder().build(), context)
-        RetrofitProvider.resetOrInitMainRetrofit("https://localtest-applesign.portkey.finance")
+        RetrofitProvider.resetOrInitMainRetrofit("https://localtest-applesign2.portkey.finance")
         GlobalConfig.setTestEnv(true)
     }
 
     private fun useGoogleLogin(context: Context) {
         val client = getGoogleSignInClient(context = context)
-        val account = GoogleSignIn.getLastSignedInAccount(context)
-        if (account == null) {
-            val signInIntent = client.signInIntent
-            googleAuthLauncher?.launch(signInIntent)
-        } else {
-            GLogger.w("signInResult: get cached account success, account: $account")
-            Portkey.sendGoogleAuthResult(account)
-        }
+        val signInIntent = client.signInIntent
+        googleAuthLauncher?.launch(signInIntent)
     }
 
     private fun handleGoogleAuthResult(result: ActivityResult) {

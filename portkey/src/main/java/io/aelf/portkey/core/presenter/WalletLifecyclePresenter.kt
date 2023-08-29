@@ -23,7 +23,6 @@ internal object WalletLifecyclePresenter {
     internal var setPin: SetPinBehaviourEntity? by mutableStateOf(null)
     internal var wallet: PortkeyWallet? by mutableStateOf(null)
     internal var unlock: WalletUnlockEntity? by mutableStateOf(null)
-    internal var cachedGoogleSignInAccount: GoogleSignInAccount? by mutableStateOf(null)
 
     internal var stageEnum by mutableStateOf(SocialRecoveryStageEnum.INIT)
 

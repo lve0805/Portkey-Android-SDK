@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import io.aelf.portkey.behaviour.guardian.GuardianBehaviourEntity
-import io.aelf.portkey.core.presenter.WalletLifecyclePresenter
 import io.aelf.portkey.internal.model.common.AccountOriginalType
 import io.aelf.portkey.internal.model.guardian.GuardianDTO
 import io.aelf.portkey.sdk.R
@@ -178,10 +177,6 @@ private fun Icons(info: GuardianDTO) {
 private fun Texts(info: GuardianDTO) {
     val guardianName = info.name ?: info.type
     var guardianIdentifier = info.guardianIdentifier
-    val googleAccount = WalletLifecyclePresenter.cachedGoogleSignInAccount
-    if (info.type == AccountOriginalType.Google.name && googleAccount != null) {
-        guardianIdentifier = googleAccount.email
-    }
     Column(
         modifier = Modifier
             .wrapContentHeight()

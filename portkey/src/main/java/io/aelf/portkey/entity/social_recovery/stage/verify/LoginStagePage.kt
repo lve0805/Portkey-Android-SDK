@@ -39,7 +39,6 @@ import androidx.compose.ui.unit.sp
 import io.aelf.portkey.behaviour.guardian.GuardianBehaviourEntity
 import io.aelf.portkey.behaviour.login.LoginBehaviourEntity
 import io.aelf.portkey.core.presenter.WalletLifecyclePresenter
-import io.aelf.portkey.entity.social_recovery.SocialRecoveryModal
 import io.aelf.portkey.entity.static.guardian_controller.GuardianController
 import io.aelf.portkey.entity.static.guardian_controller.GuardianInfo
 import io.aelf.portkey.entity.static.guardian_controller.OutsideStateEnum
@@ -50,7 +49,6 @@ import io.aelf.portkey.tools.friendly.UseComponentDidMount
 import io.aelf.portkey.tools.timeout.useTimeout
 import io.aelf.portkey.ui.basic.Distance
 import io.aelf.portkey.ui.basic.HugeTitle
-import io.aelf.portkey.ui.basic.Toast.showToast
 import io.aelf.portkey.ui.button.ButtonConfig
 import io.aelf.portkey.ui.button.HugeButton
 import io.aelf.portkey.ui.dialog.Dialog
@@ -64,13 +62,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private var loginEntity by mutableStateOf<LoginBehaviourEntity?>(null)
 private var isExpired by mutableStateOf(false)
 private var setExpiredJob: Job? = null
 
 @Composable
 internal fun LoginStagePage() {
-    loginEntity = WalletLifecyclePresenter.login
     if (WalletLifecyclePresenter.activeGuardian != null) {
         GuardianPage()
     } else {
@@ -156,8 +152,8 @@ private fun GuardianVerifyStatusBar() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            val current = loginEntity?.fullFilledGuardianCount ?: 0
-            val limit = loginEntity?.guardianVerifyLimit ?: 0
+            val current = WalletLifecyclePresenter.login?.fullFilledGuardianCount ?: 0
+            val limit = WalletLifecyclePresenter.login?.guardianVerifyLimit ?: 0
             ProgressIcon()
             Distance(5)
             RichText(
@@ -232,12 +228,12 @@ private fun GuardianInfoList() {
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    if (loginEntity == null) return
-    val guardiansOriginal = loginEntity?.guardians ?: emptyList()
+    val loginEntity = WalletLifecyclePresenter.login ?: return
+    val guardiansOriginal = loginEntity.guardians ?: emptyList()
     val guardians =
         guardiansOriginal.mapIndexed { index, info ->
             GuardianInfo().apply {
-                guardianEntity = loginEntity!!.getGuardianBehaviourEntity(index)
+                guardianEntity = loginEntity.getGuardianBehaviourEntity(index)
                 state = if (isExpired) OutsideStateEnum.Expired
                 else if (loginEntity!!.isFulfilled) OutsideStateEnum.LimitReached
                 else OutsideStateEnum.Normal
@@ -247,7 +243,7 @@ private fun GuardianInfoList() {
                         AccountOriginalType.Apple.name,
                         AccountOriginalType.Phone.name -> {
                             WalletLifecyclePresenter.activeGuardian =
-                                loginEntity!!.getGuardianBehaviourEntity(index)
+                                loginEntity.getGuardianBehaviourEntity(index)
                         }
 
                         AccountOriginalType.Google.name -> {
@@ -283,27 +279,30 @@ private suspend fun googleGuardianVerify(scope: CoroutineScope, index: Int, cont
     Loading.showLoading("Verifying...")
     val job = scope.launch(Dispatchers.IO) {
         val guardian: GuardianBehaviourEntity =
-            loginEntity!!.getGuardianBehaviourEntity(index)
+            WalletLifecyclePresenter.login!!.getGuardianBehaviourEntity(index)
         // google's guardian
         try {
             val result = guardian.verifyVerificationCode("FAKE")
-            if (!result) {
-                showToast(context = context, text = "Verification failed, please try again.")
+            if (result) {
+                Loading.hideLoading()
+                forceRecomposition()
+                return@launch
             }
         } catch (e: Throwable) {
             GLogger.e("verifyVerificationCode error:${e.message}")
-            Dialog.show(DialogProps().apply {
-                mainTitle = "Network failure"
-                subTitle = "There's some issue happened, please try again."
-                positiveText = "Try again"
-                negativeText = "Cancel"
-                positiveCallback = {
-                    scope.launch(Dispatchers.IO) {
-                        googleGuardianVerify(scope, index, context)
-                    }
-                }
-            })
+
         }
+        Dialog.show(DialogProps().apply {
+            mainTitle = "Network failure"
+            subTitle = "There's some issue happened, please try again."
+            positiveText = "Try again"
+            negativeText = "Cancel"
+            positiveCallback = {
+                scope.launch(Dispatchers.IO) {
+                    googleGuardianVerify(scope, index, context)
+                }
+            }
+        })
         Loading.hideLoading()
     }
     useTimeout(job = job, restart = {
@@ -311,6 +310,13 @@ private suspend fun googleGuardianVerify(scope: CoroutineScope, index: Int, cont
             googleGuardianVerify(scope, index, context)
         }
     })
+}
+
+private suspend fun forceRecomposition() {
+    val login = WalletLifecyclePresenter.login
+    WalletLifecyclePresenter.login = null
+    delay(10)
+    WalletLifecyclePresenter.login = login
 }
 
 
@@ -334,7 +340,7 @@ private fun CommitButton() {
                     }
                 }
             },
-            enable = loginEntity?.isFulfilled ?: false
+            enable = WalletLifecyclePresenter.login?.isFulfilled ?: false
         )
     }
 }
@@ -357,11 +363,11 @@ private suspend fun afterVerified(scope: CoroutineScope, context: Context) {
             afterVerified(scope, context)
         }
     }
-    if (loginEntity?.isFulfilled != true) return
+    if (WalletLifecyclePresenter.login?.isFulfilled != true) return
     Loading.showLoading("Checking data...")
     val job = scope.launch(Dispatchers.IO) {
         try {
-            val setPin = loginEntity?.afterVerified()
+            val setPin = WalletLifecyclePresenter.login?.afterVerified()
             if (setPin != null) {
                 Loading.hideLoading()
                 WalletLifecyclePresenter.setPin = setPin
@@ -383,7 +389,7 @@ private suspend fun afterVerified(scope: CoroutineScope, context: Context) {
 }
 
 private fun cleanUp() {
-    loginEntity = null
+    WalletLifecyclePresenter.login = null
     isExpired = false
     setExpiredJob?.cancel()
 }

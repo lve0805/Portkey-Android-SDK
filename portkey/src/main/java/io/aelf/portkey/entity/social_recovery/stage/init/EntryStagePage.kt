@@ -41,6 +41,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import io.aelf.portkey.behaviour.entry.EntryBehaviourEntity
 import io.aelf.portkey.behaviour.entry.EntryBehaviourEntity.CheckedEntry
 import io.aelf.portkey.behaviour.global.EntryCheckConfig
@@ -48,9 +49,9 @@ import io.aelf.portkey.core.presenter.WalletLifecyclePresenter
 import io.aelf.portkey.entity.social_recovery.SocialRecoveryModal
 import io.aelf.portkey.internal.model.common.AccountOriginalType
 import io.aelf.portkey.internal.model.google.GoogleAccount
+import io.aelf.portkey.network.connecter.NetworkService
 import io.aelf.portkey.sdk.R
 import io.aelf.portkey.tools.friendly.DynamicWidth
-import io.aelf.portkey.tools.friendly.NETWORK_TIMEOUT
 import io.aelf.portkey.tools.timeout.useTimeout
 import io.aelf.portkey.ui.basic.ErrorMsg
 import io.aelf.portkey.ui.basic.HugeTitle
@@ -303,17 +304,38 @@ private fun LoginPathSelector() {
     }
 }
 
-internal fun continueWithGoogleToken(googleAccount: GoogleAccount) {
+internal fun continueWithGoogleToken(googleAccount: GoogleSignInAccount) {
     entryPageHandler?.let {
         it(
             { token, scope, context ->
                 run {
                     scope.launch(Dispatchers.IO) {
-                        authCheck(token, scope, context, AccountOriginalType.Google, googleAccount)
+                        val accessToken = NetworkService.getInstance()
+                            .getGoogleAuthResult(googleAccount.serverAuthCode ?: "")
+                            .access_token
+                        authCheck(
+                            token,
+                            scope,
+                            context,
+                            AccountOriginalType.Google,
+                            convertGoogleAccount(googleAccount, accessToken)
+                        )
                     }
                 }
-            }, googleAccount.id
+            }, googleAccount.id ?: ""
         )
+    }
+}
+
+private fun convertGoogleAccount(
+    googleAccount: GoogleSignInAccount,
+    givenAccountToken: String
+): GoogleAccount {
+    return GoogleAccount().apply {
+        id = googleAccount.id
+        email = googleAccount.email
+        idToken = googleAccount.idToken
+        accessToken = givenAccountToken
     }
 }
 
@@ -324,8 +346,11 @@ internal fun enterInputEmailPage() {
 }
 
 internal fun leavesEntryPage() {
-    WalletLifecyclePresenter
-        .SpecialStageIdentifier.reset()
+    CoroutineScope(Dispatchers.IO).launch {
+        delay(500)
+        WalletLifecyclePresenter
+            .SpecialStageIdentifier.reset()
+    }
 }
 
 @Composable
