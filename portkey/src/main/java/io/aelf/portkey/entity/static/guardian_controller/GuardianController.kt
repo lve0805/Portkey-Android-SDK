@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -43,7 +44,6 @@ import io.aelf.portkey.ui.basic.Distance
 import io.aelf.portkey.ui.basic.ZIndexConfig
 import io.aelf.portkey.ui.button.ButtonConfig
 import io.aelf.portkey.ui.button.TinyButton
-import io.aelf.portkey.utils.log.GLogger
 
 @Composable
 internal fun GuardianController(info: GuardianInfo, modifier: Modifier = Modifier) {
@@ -99,11 +99,19 @@ private fun Content(info: GuardianInfo) {
             modifier = Modifier
                 .width(DynamicWidth(paddingHorizontal = 31))
                 .wrapContentHeight(),
-            horizontalArrangement = Arrangement.Start,
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icons(guardianDTO)
-            Texts(guardianDTO, info.state)
+            Row(
+                modifier = Modifier
+                    .wrapContentWidth()
+                    .fillMaxHeight(),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icons(guardianDTO)
+                Texts(guardianDTO, info.state)
+            }
             Actions(info)
         }
     }
@@ -259,7 +267,7 @@ private fun Actions(info: GuardianInfo) {
                     lineHeight = 18.sp,
                     color = Color(0xFF8F949C),
                     fontWeight = FontWeight(500),
-                    modifier = Modifier.padding(start = 20.dp),
+//                    modifier = Modifier.padding(start = 20.dp),
                     maxLines = 1,
                     overflow = TextOverflow.Visible
                 )
@@ -279,7 +287,7 @@ private fun Actions(info: GuardianInfo) {
         val verified = info.guardianEntity!!.isVerified
         if (state == OutsideStateEnum.LimitReached) {
             if (verified) {
-                Distance(width = 45)
+//                Distance(width = 45)
                 Icon(
                     painter = painterResource(id = R.drawable.verified),
                     contentDescription = "verified icon",

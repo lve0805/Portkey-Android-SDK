@@ -296,7 +296,7 @@ fun checkAndSendVerifyCode(scope: CoroutineScope, context: Context) {
                         Dialog.show(DialogProps().apply {
                             mainTitle = "Relaunch recaptcha service"
                             subTitle =
-                                "Sorry, it seems that we have trouble with the recaptcha service, please click the send button to relaunch later."
+                                "Sorry, it seems that we have trouble with the recaptcha service, please click the relaunch button to relaunch later."
                             positiveText = "Relaunch"
                             negativeText = "Cancel"
                             positiveCallback = {
@@ -310,7 +310,7 @@ fun checkAndSendVerifyCode(scope: CoroutineScope, context: Context) {
                         Dialog.show(DialogProps().apply {
                             mainTitle = "Relaunch recaptcha service"
                             subTitle =
-                                "Sorry, we need to pass the reCaptcha test to send verify code, please click the send button to relaunch later."
+                                "Sorry, we need to pass the reCaptcha test to send verify code, please click the relaunch button to relaunch later."
                             positiveText = "Relaunch"
                             negativeText = "Cancel"
                             positiveCallback = {
