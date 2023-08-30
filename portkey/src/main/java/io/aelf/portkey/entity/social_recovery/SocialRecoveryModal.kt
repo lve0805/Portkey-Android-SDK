@@ -47,7 +47,6 @@ import io.aelf.portkey.entity.social_recovery.stage.pin.UnlockStagePage
 import io.aelf.portkey.entity.social_recovery.stage.verify.LoginStagePage
 import io.aelf.portkey.entity.social_recovery.stage.verify.RegisterPage
 import io.aelf.portkey.entity.static.footage.PortkeyFootage
-import io.aelf.portkey.internal.model.google.GoogleAccount
 import io.aelf.portkey.sdk.R
 import io.aelf.portkey.tools.friendly.UseAndroidBackButtonSettings
 import io.aelf.portkey.tools.friendly.UseComponentDidMount
@@ -75,9 +74,9 @@ internal object SocialRecoveryModal : ModalController {
 
     internal fun callUpModal(props: SocialRecoveryModalProps) {
         this.modalProps = props
-        if(WalletLifecyclePresenter.wallet!=null){
+        if (WalletLifecyclePresenter.wallet != null) {
             GLogger.w("Already login")
-            props.onError?.let { it(AElfException(ResultCode.INTERNAL_ERROR,"Already login")) }
+            props.onError?.let { it(AElfException(ResultCode.INTERNAL_ERROR, "Already login")) }
             return
         }
         isShow = true
@@ -309,12 +308,13 @@ internal object SocialRecoveryModal : ModalController {
         }
     }
 
-    private fun determineHeightPercent():Float{
-        return when(WalletLifecyclePresenter.stageEnum){
-            SocialRecoveryStageEnum.UNLOCK ->{
+    private fun determineHeightPercent(): Float {
+        return when (WalletLifecyclePresenter.stageEnum) {
+            SocialRecoveryStageEnum.UNLOCK -> {
                 0.93f
             }
-            else ->{
+
+            else -> {
                 0.85f
             }
         }

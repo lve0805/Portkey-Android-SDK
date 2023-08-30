@@ -356,6 +356,7 @@ private fun CommitButton() {
 private fun startCountDown(scope: CoroutineScope) {
     setExpiredJob?.cancel()
     setExpiredJob = scope.launch(Dispatchers.IO) {
+        isExpired = false
         var timeout = 60 * 60 * 1000
         while (timeout > 0) {
             delay(1000)

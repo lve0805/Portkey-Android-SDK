@@ -203,42 +203,46 @@ private suspend fun authCheck(
                 subTitle =
                     "This account has not been registered yet. Click \"Confirm\" to complete the registration."
                 positiveCallback = {
-                    entry.asRegisterChain().onRegisterStep {
-                        if (googleAccount == null) {
-                            Loading.showLoading("Checking on-chain data...")
-                            scope.launch(Dispatchers.IO) {
-                                try {
-                                    WalletLifecyclePresenter.activeGuardian = it.guardian
-                                } catch (e: Throwable) {
-                                    GLogger.e(
-                                        "error when checking register guardian info.",
-                                        AElfException(e)
-                                    )
+                    scope.launch(Dispatchers.IO) {
+                        entry.asRegisterChain().onRegisterStep {
+                            if (googleAccount == null) {
+                                Loading.showLoading("Checking on-chain data...")
+                                scope.launch(Dispatchers.IO) {
+                                    try {
+                                        WalletLifecyclePresenter.activeGuardian = it.guardian
+                                    } catch (e: Throwable) {
+                                        GLogger.e(
+                                            "error when checking register guardian info.",
+                                            AElfException(e)
+                                        )
+                                    }
+                                    Loading.hideLoading()
+                                    if (WalletLifecyclePresenter.activeGuardian == null) {
+                                        showToast(
+                                            context,
+                                            "Sorry but the sever was not responding, please try again later."
+                                        )
+                                    } else {
+                                        WalletLifecyclePresenter.register = it
+                                    }
+                                    leavesEntryPage()
                                 }
-                                Loading.hideLoading()
-                                if (WalletLifecyclePresenter.activeGuardian == null) {
-                                    showToast(
-                                        context,
-                                        "Sorry but the sever was not responding, please try again later."
-                                    )
-                                } else {
-                                    WalletLifecyclePresenter.register = it
-                                }
-                                leavesEntryPage()
-                            }
-                        } else {
-                            // Google account registration
-                            val result = it.guardian.verifyVerificationCode("FAKE")
-                            if (result) {
-                                WalletLifecyclePresenter.setPin = it.afterVerified()
-                                leavesEntryPage()
                             } else {
-                                showToast(
-                                    context,
-                                    "Sorry but the sever was not responding, please try again later."
-                                )
+                                // Google account registration
+                                scope.launch(Dispatchers.IO) {
+                                    val result = it.guardian.verifyVerificationCode("FAKE")
+                                    if (result) {
+                                        WalletLifecyclePresenter.setPin = it.afterVerified()
+                                        leavesEntryPage()
+                                    } else {
+                                        showToast(
+                                            context,
+                                            "Sorry but the sever was not responding, please try again later."
+                                        )
+                                    }
+                                    Loading.hideLoading()
+                                }
                             }
-                            Loading.hideLoading()
                         }
                     }
                 }

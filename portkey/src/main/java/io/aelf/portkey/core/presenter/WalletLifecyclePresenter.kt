@@ -1,6 +1,5 @@
 package io.aelf.portkey.core.presenter
 
-import android.text.TextUtils
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -29,10 +28,10 @@ internal object WalletLifecyclePresenter {
 
     internal fun inferCurrentStage() {
         stageEnum =
-            if (unlock != null) {
-                SocialRecoveryStageEnum.UNLOCK
-            } else if (wallet != null) {
+            if (wallet != null) {
                 SocialRecoveryStageEnum.ACTIVE
+            } else if (unlock != null) {
+                SocialRecoveryStageEnum.UNLOCK
             } else if (setPin != null) {
                 SocialRecoveryStageEnum.SET_PIN
             } else if (register != null) {
@@ -59,6 +58,7 @@ internal object WalletLifecyclePresenter {
         activeGuardian = null
         activeGuardians = emptyList()
         setPin = null
+        unlock = null
         if (!saveWallet) wallet = null
         SpecialStageIdentifier.reset()
         inferCurrentStage()
