@@ -188,7 +188,7 @@ private fun headVerifyCode(code: String, scope: CoroutineScope) {
             }
         } catch (e: Throwable) {
             GLogger.e("Check verify code failed!", AElfException(e))
-            errorMsg = "incorrect code"
+            errorMsg = "network failure"
             Loading.hideLoading()
         }
     }
