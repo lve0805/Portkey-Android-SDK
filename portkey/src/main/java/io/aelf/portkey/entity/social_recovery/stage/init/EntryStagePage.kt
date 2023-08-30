@@ -181,14 +181,32 @@ private suspend fun authCheck(
 ) {
     Loading.showLoading("Checking on-chain data...")
     val checkDeferred = scope.launch(Dispatchers.IO) {
-        val entry: CheckedEntry =
-            EntryBehaviourEntity.attemptAccountCheck(
-                EntryCheckConfig().apply {
-                    accountIdentifier = auth
-                    accountOriginalType = accountType
-                },
-                googleAccount
+        var entry: CheckedEntry?
+        try {
+            entry =
+                EntryBehaviourEntity.attemptAccountCheck(
+                    EntryCheckConfig().apply {
+                        accountIdentifier = auth
+                        accountOriginalType = accountType
+                    },
+                    googleAccount
+                )
+        } catch (e: Throwable) {
+            GLogger.e("error when checking account.", AElfException(e))
+            Loading.hideLoading()
+            Dialog.show(
+                DialogProps().apply {
+                    mainTitle = "Network Failure"
+                    subTitle = "Please check your network connection and try again."
+                    positiveCallback = {
+                        scope.launch(Dispatchers.IO) {
+                            authCheck(auth, scope, context, accountType, googleAccount)
+                        }
+                    }
+                }
             )
+            return@launch
+        }
         if (entry.isRegistered) {
             entry.asLogInChain().onLoginStep {
                 Loading.hideLoading()
@@ -205,8 +223,8 @@ private suspend fun authCheck(
                 positiveCallback = {
                     scope.launch(Dispatchers.IO) {
                         entry.asRegisterChain().onRegisterStep {
+                            Loading.showLoading("Checking on-chain data...")
                             if (googleAccount == null) {
-                                Loading.showLoading("Checking on-chain data...")
                                 scope.launch(Dispatchers.IO) {
                                     try {
                                         WalletLifecyclePresenter.activeGuardian = it.guardian
@@ -331,20 +349,27 @@ internal fun continueWithGoogleToken(googleAccount: GoogleSignInAccount) {
             { token, scope, context ->
                 run {
                     scope.launch(Dispatchers.IO) {
+                        var accessToken: String?
                         try {
-                            val accessToken = NetworkService.getInstance()
+                            accessToken = NetworkService.getInstance()
                                 .getGoogleAuthResult(googleAccount.serverAuthCode ?: "")
                                 .access_token
-                            authCheck(
-                                token,
-                                scope,
-                                context,
-                                AccountOriginalType.Google,
-                                convertGoogleAccount(googleAccount, accessToken)
-                            )
                         } catch (e: Throwable) {
+                            GLogger.e("error when checking google account.", AElfException(e))
+                            showToast(
+                                context,
+                                "Sorry but the sever was not responding, please try again later."
+                            )
                             Loading.hideLoading()
+                            return@launch
                         }
+                        authCheck(
+                            token,
+                            scope,
+                            context,
+                            AccountOriginalType.Google,
+                            convertGoogleAccount(googleAccount, accessToken)
+                        )
                     }
                 }
             }, googleAccount.id ?: ""

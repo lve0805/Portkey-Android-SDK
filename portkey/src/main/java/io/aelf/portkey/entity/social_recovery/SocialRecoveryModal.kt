@@ -244,7 +244,7 @@ internal object SocialRecoveryModal : ModalController {
                         EntryBehaviourEntity.attemptToGetLockedWallet().get()
                 }
             }
-            Loading.hideLoadingCoroutine(scope = this, duration = 800)
+            Loading.hideLoadingCoroutine(scope = this, duration = 100)
         }
     }
 

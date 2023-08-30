@@ -52,6 +52,11 @@ import io.aelf.portkey.ui.basic.ErrorMsg
 import io.aelf.portkey.ui.basic.HugeTitle
 import io.aelf.portkey.ui.button.ButtonConfig
 import io.aelf.portkey.ui.button.HugeButton
+import io.aelf.portkey.ui.dialog.Dialog
+import io.aelf.portkey.ui.dialog.DialogProps
+import io.aelf.portkey.ui.loading.Loading
+import io.aelf.portkey.utils.log.GLogger
+import io.aelf.utils.AElfException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -488,16 +493,41 @@ private fun checkPinCreate(context: Context) {
 }
 
 private fun onFinish(biometric: BiometricPrompt.AuthenticationResult? = null) {
-    val setPin = WalletLifecyclePresenter.setPin ?: return
-    if (!setPin.isValidPin(pinValue) || pinValue != repeatPinValue) {
-        return
+    CoroutineScope(Dispatchers.IO).launch {
+        val setPin = WalletLifecyclePresenter.setPin ?: return@launch
+        if (!setPin.isValidPin(pinValue) || pinValue != repeatPinValue) {
+            return@launch
+        }
+        try {
+            Loading.showLoading("Creating Wallet...")
+            val wallet = setPin.lockAndGetWallet(pinValue)
+            if (wallet == null) {
+                Dialog.show(
+                    DialogProps().apply {
+                        mainTitle = "Network failure"
+                        subTitle = "Create wallet failed, please try again."
+                        positiveText = "Try again"
+                        negativeText = "Cancel"
+                        positiveCallback = {
+                            onFinish(biometric)
+                        }
+                    }
+                )
+                Loading.hideLoading()
+                return@launch
+            }
+            WalletLifecyclePresenter.wallet = wallet
+            Loading.hideLoading()
+        } catch (e: Throwable) {
+            GLogger.e("set pin process failed:", AElfException(e))
+            return@launch
+        }
+        if (biometric != null) {
+            extraPinValueStorage()
+        }
+        clearUp()
+        SocialRecoveryModal.onSuccess()
     }
-    WalletLifecyclePresenter.wallet = setPin.lockAndGetWallet(pinValue)
-    if (biometric != null) {
-        extraPinValueStorage()
-    }
-    clearUp()
-    SocialRecoveryModal.onSuccess()
 }
 
 

@@ -249,7 +249,6 @@ private fun getGuardianIdentifier(info: GuardianDTO): String {
 
 @Composable
 private fun Actions(info: GuardianInfo) {
-    GLogger.i("HAHA")
     val state = info.state
     if (state != OutsideStateEnum.Normal && state != OutsideStateEnum.LimitReached) {
         when (state) {

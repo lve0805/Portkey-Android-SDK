@@ -183,6 +183,7 @@ private fun headVerifyCode(code: String, scope: CoroutineScope) {
             if (result) {
                 handleVerifySuccess(scope)
             } else {
+                Loading.hideLoading()
                 errorMsg = "incorrect code"
             }
         } catch (e: Throwable) {
