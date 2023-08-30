@@ -39,6 +39,7 @@ import io.aelf.portkey.internal.model.common.AccountOriginalType
 import io.aelf.portkey.internal.model.guardian.GuardianDTO
 import io.aelf.portkey.sdk.R
 import io.aelf.portkey.tools.friendly.DynamicWidth
+import io.aelf.portkey.ui.basic.Distance
 import io.aelf.portkey.ui.basic.ZIndexConfig
 import io.aelf.portkey.ui.button.ButtonConfig
 import io.aelf.portkey.ui.button.TinyButton
@@ -279,6 +280,7 @@ private fun Actions(info: GuardianInfo) {
         val verified = info.guardianEntity!!.isVerified
         if (state == OutsideStateEnum.LimitReached) {
             if (verified) {
+                Distance(width = 45)
                 Icon(
                     painter = painterResource(id = R.drawable.verified),
                     contentDescription = "verified icon",

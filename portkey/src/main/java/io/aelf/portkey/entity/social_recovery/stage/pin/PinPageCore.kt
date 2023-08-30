@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -163,7 +164,7 @@ internal fun PinPagePresenter(controlType: PinPageType) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight()
-                    .padding(top = 60.dp)
+                    .padding(top = 36.dp)
                     .clickable(indication = null, interactionSource = remember {
                         MutableInteractionSource()
                     }) {
@@ -174,12 +175,21 @@ internal fun PinPagePresenter(controlType: PinPageType) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.biometric_raw),
-                    contentDescription = "biometric icon",
-                    modifier = Modifier.size(100.dp),
-                    tint = Color(0xFF5B8EF4)
-                )
+                Row(
+                    modifier = Modifier
+                        .size(148.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color(0xFFF7F9FD)),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.biometric_raw),
+                        contentDescription = "biometric icon",
+                        modifier = Modifier.size(100.dp),
+                        tint = Color(0xFF5B8EF4)
+                    )
+                }
                 Text(
                     text = "Enable biometric authentication",
                     fontWeight = FontWeight(500),

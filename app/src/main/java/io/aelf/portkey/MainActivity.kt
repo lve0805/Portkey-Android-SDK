@@ -31,6 +31,7 @@ import io.aelf.portkey.ui.basic.Toast
 import io.aelf.portkey.ui.button.ButtonConfig
 import io.aelf.portkey.ui.button.HugeButton
 import io.aelf.portkey.utils.log.GLogger
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -76,7 +77,7 @@ class MainActivity : FragmentActivity() {
                 }
                 onError = {
                     GLogger.e("onError", it)
-                    showToast("onError")
+                    showToast("onError:${it.message}")
                 }
                 onUseGoogleAuthService = {
                     useGoogleLogin(context)
@@ -101,6 +102,15 @@ class MainActivity : FragmentActivity() {
                             success = { it: BiometricPrompt.AuthenticationResult ->
                                 GLogger.w("onSuccess: $it")
                             })
+                    }
+                }
+            )
+            HugeButton(
+                config = ButtonConfig().apply {
+                    text = "Clear Wallet"
+                    onClick = {
+                        Portkey.forceLogout()
+                        showToast("Wallet removed.")
                     }
                 }
             )

@@ -4,7 +4,6 @@ import android.text.TextUtils
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import io.aelf.portkey.behaviour.entry.EntryBehaviourEntity
 import io.aelf.portkey.behaviour.guardian.GuardianBehaviourEntity
 import io.aelf.portkey.behaviour.login.LoginBehaviourEntity
@@ -13,6 +12,7 @@ import io.aelf.portkey.behaviour.pin.WalletUnlockEntity
 import io.aelf.portkey.behaviour.register.RegisterBehaviourEntity
 import io.aelf.portkey.behaviour.wallet.PortkeyWallet
 import io.aelf.portkey.core.stage.social_recovery.SocialRecoveryStageEnum
+import io.aelf.portkey.internal.model.guardian.GuardianWrapper
 
 internal object WalletLifecyclePresenter {
 
@@ -20,6 +20,7 @@ internal object WalletLifecyclePresenter {
     internal var login: LoginBehaviourEntity? by mutableStateOf(null)
     internal var register: RegisterBehaviourEntity? by mutableStateOf(null)
     internal var activeGuardian: GuardianBehaviourEntity? by mutableStateOf(null)
+    internal var activeGuardians: List<GuardianWrapper> by mutableStateOf(emptyList())
     internal var setPin: SetPinBehaviourEntity? by mutableStateOf(null)
     internal var wallet: PortkeyWallet? by mutableStateOf(null)
     internal var unlock: WalletUnlockEntity? by mutableStateOf(null)
@@ -51,53 +52,17 @@ internal object WalletLifecyclePresenter {
         }
     }
 
-    internal const val PIN_LENGTH = 6
     internal fun reset(saveWallet: Boolean = false) {
         entry = null
         login = null
         register = null
         activeGuardian = null
+        activeGuardians = emptyList()
         setPin = null
         if (!saveWallet) wallet = null
         SpecialStageIdentifier.reset()
         inferCurrentStage()
     }
-
-
-    internal fun detectCachedWallet(): Boolean {
-        return EntryBehaviourEntity.ifLockedWalletExists()
-    }
-
-    internal fun headPin(pin: String): Boolean {
-        if (!detectCachedWallet()) return false
-        val unlockEntity = EntryBehaviourEntity.attemptToGetLockedWallet()
-        if (!unlockEntity.isPresent) return false
-        return unlockEntity.get().checkPin(pin)
-    }
-
-
-    internal fun unlockWallet(pin: String): PortkeyWallet? {
-        if (!checkPin(pin)) {
-            return null
-        }
-        EntryBehaviourEntity.attemptToGetLockedWallet().ifPresent {
-            try {
-                wallet = it.unlockAndBuildWallet(pin)
-            } catch (ignored: Throwable) {
-            }
-        }
-        inferCurrentStage()
-        return wallet
-    }
-
-    internal fun checkPin(pin: String): Boolean {
-        if (TextUtils.isEmpty(pin)) {
-            return false
-        }
-        return pin.length == PIN_LENGTH
-    }
-
-
 }
 
 

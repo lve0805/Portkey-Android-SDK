@@ -46,6 +46,7 @@ import io.aelf.portkey.internal.model.common.AccountOriginalType
 import io.aelf.portkey.sdk.R
 import io.aelf.portkey.tools.friendly.DynamicWidth
 import io.aelf.portkey.tools.friendly.UseComponentDidMount
+import io.aelf.portkey.tools.friendly.UseComponentWillUnmount
 import io.aelf.portkey.tools.timeout.useTimeout
 import io.aelf.portkey.ui.basic.Distance
 import io.aelf.portkey.ui.basic.HugeTitle
@@ -71,6 +72,9 @@ internal fun LoginStagePage() {
         GuardianPage()
     } else {
         LoginMainBody()
+    }
+    UseComponentWillUnmount {
+        cleanUp()
     }
 }
 
@@ -183,15 +187,15 @@ private fun ProgressIcon() {
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            ProgressIconContent(resId = resId, size = 14)
+            ProgressIconContent(resId = resId)
         }
     } else {
-        ProgressIconContent(resId = resId, size = 14)
+        ProgressIconContent(resId = resId)
     }
 }
 
 @Composable
-private fun ProgressIconContent(resId: Int, size: Int) {
+private fun ProgressIconContent(resId: Int, size: Int = 14) {
     Icon(
         painter = painterResource(
             id = resId
@@ -229,7 +233,7 @@ private fun GuardianInfoList() {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val loginEntity = WalletLifecyclePresenter.login ?: return
-    val guardiansOriginal = loginEntity.guardians ?: emptyList()
+    val guardiansOriginal = WalletLifecyclePresenter.activeGuardians
     val guardians =
         guardiansOriginal.mapIndexed { index, info ->
             GuardianInfo().apply {
@@ -316,10 +320,11 @@ private suspend fun googleGuardianVerify(
 }
 
 private suspend fun forceRecomposition() {
-    val login = WalletLifecyclePresenter.login
+    val login = WalletLifecyclePresenter.login ?: return
     WalletLifecyclePresenter.login = null
     delay(10)
     WalletLifecyclePresenter.login = login
+    WalletLifecyclePresenter.activeGuardians = login.guardians
 }
 
 
@@ -393,6 +398,7 @@ private suspend fun afterVerified(scope: CoroutineScope, context: Context) {
 
 private fun cleanUp() {
     WalletLifecyclePresenter.login = null
+    WalletLifecyclePresenter.activeGuardians = emptyList()
     isExpired = false
     setExpiredJob?.cancel()
 }

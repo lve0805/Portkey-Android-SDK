@@ -193,6 +193,7 @@ private suspend fun authCheck(
             entry.asLogInChain().onLoginStep {
                 Loading.hideLoading()
                 WalletLifecyclePresenter.login = it
+                WalletLifecyclePresenter.activeGuardians = it.guardians
                 leavesEntryPage()
             }
         } else {
@@ -231,8 +232,11 @@ private suspend fun authCheck(
                             if (result) {
                                 WalletLifecyclePresenter.setPin = it.afterVerified()
                                 leavesEntryPage()
-                            }else{
-                                showToast(context, "Sorry but the sever was not responding, please try again later.")
+                            } else {
+                                showToast(
+                                    context,
+                                    "Sorry but the sever was not responding, please try again later."
+                                )
                             }
                             Loading.hideLoading()
                         }

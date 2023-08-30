@@ -61,6 +61,7 @@ import io.aelf.portkey.ui.dialog.DialogProps
 import io.aelf.portkey.ui.loading.Loading
 import io.aelf.portkey.ui.loading.Loading.PortkeyLoading
 import io.aelf.portkey.utils.log.GLogger
+import io.aelf.response.ResultCode
 import io.aelf.utils.AElfException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -68,12 +69,17 @@ import kotlinx.coroutines.launch
 
 internal object SocialRecoveryModal : ModalController {
     private var isShow by mutableStateOf(false)
-    private const val heightPercent = 0.85f
+    private const val heightPercent = 0.90f
     private var backFunction: (() -> Unit)? by mutableStateOf(null)
     private var modalProps: SocialRecoveryModalProps = SocialRecoveryModalProps()
 
     internal fun callUpModal(props: SocialRecoveryModalProps) {
         this.modalProps = props
+        if(WalletLifecyclePresenter.wallet!=null){
+            GLogger.w("Already login")
+            props.onError?.let { it(AElfException(ResultCode.INTERNAL_ERROR,"Already login")) }
+            return
+        }
         isShow = true
     }
 
@@ -274,7 +280,7 @@ internal object SocialRecoveryModal : ModalController {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.84f)
+                .fillMaxHeight(determineHeightPercent())
                 .background(Color.White)
         ) {
             when (WalletLifecyclePresenter.stageEnum) {
@@ -299,6 +305,17 @@ internal object SocialRecoveryModal : ModalController {
                 }
 
                 else -> {}
+            }
+        }
+    }
+
+    private fun determineHeightPercent():Float{
+        return when(WalletLifecyclePresenter.stageEnum){
+            SocialRecoveryStageEnum.UNLOCK ->{
+                0.93f
+            }
+            else ->{
+                0.85f
             }
         }
     }
