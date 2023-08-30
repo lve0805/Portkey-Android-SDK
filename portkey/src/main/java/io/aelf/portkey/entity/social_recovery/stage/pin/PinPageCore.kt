@@ -498,35 +498,35 @@ private fun onFinish(biometric: BiometricPrompt.AuthenticationResult? = null) {
         if (!setPin.isValidPin(pinValue) || pinValue != repeatPinValue) {
             return@launch
         }
+        Loading.showLoading("Creating Wallet...")
         try {
-            Loading.showLoading("Creating Wallet...")
             val wallet = setPin.lockAndGetWallet(pinValue)
-            if (wallet == null) {
-                Dialog.show(
-                    DialogProps().apply {
-                        mainTitle = "Network failure"
-                        subTitle = "Create wallet failed, please try again."
-                        positiveText = "Try again"
-                        negativeText = "Cancel"
-                        positiveCallback = {
-                            onFinish(biometric)
-                        }
-                    }
-                )
-                Loading.hideLoading()
+            Loading.hideLoading()
+            if (wallet != null) {
+                if (biometric != null) {
+                    extraPinValueStorage()
+                }
+                WalletLifecyclePresenter.wallet = wallet
+                clearUp()
+                SocialRecoveryModal.onSuccess()
                 return@launch
             }
-            WalletLifecyclePresenter.wallet = wallet
-            Loading.hideLoading()
         } catch (e: Throwable) {
             GLogger.e("set pin process failed:", AElfException(e))
-            return@launch
+            Loading.hideLoading()
         }
-        if (biometric != null) {
-            extraPinValueStorage()
-        }
-        clearUp()
-        SocialRecoveryModal.onSuccess()
+        Dialog.show(
+            DialogProps().apply {
+                mainTitle = "Network failure"
+                subTitle = "Create wallet failed, please try again."
+                positiveText = "Try again"
+                negativeText = "Cancel"
+                positiveCallback = {
+                    onFinish(biometric)
+                }
+            }
+        )
+
     }
 }
 
