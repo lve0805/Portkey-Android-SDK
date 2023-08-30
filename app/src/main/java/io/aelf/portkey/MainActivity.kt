@@ -171,6 +171,7 @@ class MainActivity : FragmentActivity() {
                             Text(text = it, modifier = Modifier.padding(start = 10.dp))
                         },
                         onClick = {
+                            expand = false
                             RetrofitProvider.resetOrInitMainRetrofit(
                                 when (it) {
                                     "MainNet" -> "https://did-portkey.portkey.finance"
