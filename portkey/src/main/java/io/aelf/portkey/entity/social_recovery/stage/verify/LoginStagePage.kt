@@ -3,6 +3,7 @@ package io.aelf.portkey.entity.social_recovery.stage.verify
 import android.content.Context
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -20,10 +21,12 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Text
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -34,6 +37,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.aelf.portkey.behaviour.guardian.GuardianBehaviourEntity
@@ -95,15 +99,14 @@ private fun LoginMainBody() {
             verticalArrangement = Arrangement.Top
         ) {
             HugeTitle(text = "Guardians' Approval")
-            RichText(
+            Text(
                 text = if (isExpired) "Expired" else "Expire after 1 hour",
-                maxLine = 1,
-                normalTextStyle = SpanStyle(
-                    color = Color(0xFF8F949C),
-                    fontWeight = FontWeight(400),
-                    fontSize = 14.sp,
-                    background = Color.Transparent
-                )
+                fontSize = 14.sp,
+                lineHeight = 22.sp,
+                textAlign = TextAlign.Center,
+                color = Color(0xFF8F949C),
+                fontWeight = FontWeight(400),
+                modifier = Modifier.padding(top = 4.dp)
             )
             GuardianVerifyStatusBar()
             GuardianInfoList()
@@ -136,7 +139,9 @@ private fun GuardianVerifyStatusBar() {
                 contentDescription = "question icon",
                 modifier = Modifier
                     .size(16.dp)
-                    .clickable {
+                    .clickable(indication = null, interactionSource = remember {
+                        MutableInteractionSource()
+                    }, onClick = {
                         Dialog.show(DialogProps().apply {
                             mainTitle = "Guardians' Approval Rule"
                             subTitle =
@@ -145,7 +150,7 @@ private fun GuardianVerifyStatusBar() {
                             useSingleConfirmButton = true
                             positiveText = "Got it"
                         })
-                    },
+                    }),
                 tint = Color(0xFF8F949C)
             )
         }

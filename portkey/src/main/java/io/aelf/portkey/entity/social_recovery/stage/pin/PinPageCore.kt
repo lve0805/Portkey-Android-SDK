@@ -3,10 +3,12 @@ package io.aelf.portkey.entity.social_recovery.stage.pin
 import android.content.Context
 import android.text.TextUtils
 import androidx.biometric.BiometricPrompt
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -188,11 +190,10 @@ internal fun PinPagePresenter(controlType: PinPageType) {
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
+                    Image(
                         painter = painterResource(id = R.drawable.biometric_raw),
                         contentDescription = "biometric icon",
                         modifier = Modifier.size(100.dp),
-                        tint = Color(0xFF5B8EF4)
                     )
                 }
                 Text(
@@ -297,6 +298,11 @@ private fun PinInputItem(
 ) {
     val context = LocalContext.current
     val regex0To9 = "[0-9]".toRegex()
+    val interactionSource = remember {
+        MutableInteractionSource()
+    }
+    val underPress by interactionSource.collectIsPressedAsState()
+
     fun handleClick() {
         if (regex0To9.matches(controlValue)) {
             setPinsValueByAppends(controlValue, context)
@@ -319,9 +325,9 @@ private fun PinInputItem(
         } else {
             Row(
                 modifier = modifier
-                    .clickable(indication = null, interactionSource = remember {
-                        MutableInteractionSource()
-                    }) {
+                    .clickable(
+                        indication = null, interactionSource = interactionSource
+                    ) {
                         handleClick()
                     },
                 horizontalArrangement = Arrangement.Center,
@@ -335,12 +341,12 @@ private fun PinInputItem(
                         .clickable(
                             enabled = type == PinPageType.VERIFY,
                             indication = null,
-                            interactionSource = remember {
-                                MutableInteractionSource()
-                            }
+                            interactionSource = interactionSource
                         ) {
                             handleClick()
-                        }
+                        },
+                    tint = if (underPress) Color(0xFF8F949C).copy(alpha = 0.8F)
+                    else Color(0xFF8F949C)
                 )
             }
         }
@@ -350,16 +356,22 @@ private fun PinInputItem(
             .clip(CircleShape)
         modifier = if (controlValue != CONTROL_DELETE) {
             modifier
-                .background(Color(0xFFF7F9FD))
-                .clickable {
+                .background(
+                    if (underPress) Color(0xFFEDEFF5)
+                    else Color(0xFFF7F9FD)
+                )
+                .clickable(
+                    indication = null,
+                    interactionSource = interactionSource
+                ) {
                     handleClick()
                 }
         } else {
             modifier
                 .background(Color.Transparent)
-                .clickable(indication = null, interactionSource = remember {
-                    MutableInteractionSource()
-                }) {
+                .clickable(
+                    indication = null, interactionSource = interactionSource
+                ) {
                     handleClick()
                 }
         }
@@ -381,7 +393,9 @@ private fun PinInputItem(
                 Icon(
                     painter = painterResource(id = R.drawable.delete_icon),
                     contentDescription = "delete icon",
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(24.dp),
+                    tint = if (underPress) Color(0xFF8F949C).copy(alpha = 0.8F)
+                    else Color(0xFF8F949C)
                 )
             }
         }
@@ -429,7 +443,7 @@ private fun PinDisplay() {
                 .size(16.dp)
                 .clip(CircleShape)
             modifier = if (i < length) {
-                modifier.background(Color.Black)
+                modifier.background(Color(0xFF162736))
             } else {
                 modifier
                     .border(1.dp, Color(0xFFEDEFF5), CircleShape)

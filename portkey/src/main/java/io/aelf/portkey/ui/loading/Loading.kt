@@ -38,10 +38,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
 import com.airbnb.lottie.LottieAnimationView
-import io.aelf.portkey.sdk.R
 import io.aelf.portkey.async.PortkeyAsyncCaller
 import io.aelf.portkey.init.InitProcessor
 import io.aelf.portkey.init.SDkInitConfig
+import io.aelf.portkey.sdk.R
 import io.aelf.portkey.tools.friendly.DynamicWidth
 import io.aelf.portkey.tools.friendly.UseComponentDidMount
 import io.aelf.portkey.tools.friendly.UseComponentWillUnmount
@@ -77,7 +77,7 @@ internal object Loading {
                 .clip(
                     RoundedCornerShape(8.dp)
                 )
-                .background(Color.White)
+                .background(Color(0xFFFCFCFF))
                 .width(wrapperStyle.width)
                 .height(wrapperStyle.height),
             verticalArrangement = Arrangement.Center
@@ -86,8 +86,9 @@ internal object Loading {
             Text(
                 text = text,
                 style = TextStyle(
-                    fontSize = 14.sp, color = Color.Black,
-                    fontWeight = FontWeight(400)
+                    fontSize = 14.sp,
+                    color = Color(0xFF414852),
+                    fontWeight = FontWeight(400),
                 ),
                 textAlign = TextAlign.Center,
                 modifier = Modifier

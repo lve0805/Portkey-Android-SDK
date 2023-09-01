@@ -9,11 +9,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -31,8 +32,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.fragment.app.FragmentActivity
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
@@ -43,17 +46,21 @@ import io.aelf.portkey.init.InitProcessor
 import io.aelf.portkey.init.SDkInitConfig
 import io.aelf.portkey.internal.tools.GlobalConfig
 import io.aelf.portkey.network.retrofit.RetrofitProvider
-import io.aelf.portkey.tools.biometric.launchBiometricVerify
 import io.aelf.portkey.tools.friendly.UseComponentDidMount
 import io.aelf.portkey.ui.basic.Toast
 import io.aelf.portkey.ui.button.ButtonConfig
 import io.aelf.portkey.ui.button.HugeButton
 import io.aelf.portkey.utils.log.GLogger
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Suppress("DEPRECATION")
 class MainActivity : FragmentActivity() {
+
+
+    private var modalOpen by mutableStateOf(false)
     private var googleAuthLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -87,45 +94,48 @@ class MainActivity : FragmentActivity() {
                 onUserCancel = {
                     GLogger.w("onUserCancel")
                     showToast("onUserCancel")
+                    modalOpen = false
                 }
                 onSuccess = {
                     GLogger.w("onSuccess")
                     showToast("onSuccess")
+                    modalOpen = false
                 }
                 onError = {
                     GLogger.e("onError", it)
                     showToast("onError:${it.message}")
+                    modalOpen = false
                 }
                 onUseGoogleAuthService = {
                     useGoogleLogin(context)
                 }
             }
         }
-        Column() {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.LightGray)
+                .zIndex(1F)
+                .padding(top = 50.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(5.dp, Alignment.Top)
+        ) {
             HugeButton(
                 config = ButtonConfig().apply {
                     text = "Call Up Dialog"
-                    onClick = {
-                        Portkey.callUpSocialRecoveryModel(props)
-                    }
-                }
-            )
-            HugeButton(
-                config = ButtonConfig().apply {
-                    text = "Call Up Biometric"
-                    onClick = {
-                        launchBiometricVerify(
-                            context = this@MainActivity,
-                            success = { it: BiometricPrompt.AuthenticationResult ->
-                                GLogger.w("onSuccess: $it")
-                            })
+                    onClick = callUp@{
+                        if (!modalOpen) {
+                            Portkey.callUpSocialRecoveryModel(props)
+                            modalOpen = true
+                        }
                     }
                 }
             )
             HugeButton(
                 config = ButtonConfig().apply {
                     text = "Clear Wallet"
-                    onClick = {
+                    onClick = logout@{
+                        if (modalOpen) return@logout
                         Portkey.forceLogout()
                         showToast("Wallet removed.")
                     }
@@ -142,7 +152,7 @@ class MainActivity : FragmentActivity() {
         val data = mutableListOf(
             "MainNet",
             "TestNet",
-            "Text1",
+            "Test1",
             "Test2"
         )
         var expand by remember {
@@ -151,13 +161,15 @@ class MainActivity : FragmentActivity() {
         Box(
             modifier = Modifier
                 .height(50.dp)
-                .width(200.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .width((LocalConfiguration.current.screenWidthDp - 20 * 2).dp)
+                .clip(RoundedCornerShape(8.dp))
                 .background(Color(0xFF4285F4))
-                .padding(vertical = 10.dp),
+                .padding(vertical = 10.dp)
+                .zIndex(1F),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = "Select Environment", modifier = Modifier.clickable {
+            Text(text = "Select Environment", modifier = Modifier.clickable click@{
+                if (modalOpen) return@click
                 expand = !expand
             }, color = Color.White)
             DropdownMenu(
@@ -188,7 +200,6 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-
     internal fun initDebug(context: Context) {
         InitProcessor.init(SDkInitConfig.Builder().build(), context)
         RetrofitProvider.resetOrInitMainRetrofit("https://localtest-applesign2.portkey.finance")
@@ -199,6 +210,11 @@ class MainActivity : FragmentActivity() {
         val client = getGoogleSignInClient(context = context)
         val signInIntent = client.signInIntent
         googleAuthLauncher?.launch(signInIntent)
+    }
+
+    private fun thenSignOut(context: Context) {
+        val client = getGoogleSignInClient(context = context)
+        client.signOut()
     }
 
     private fun handleGoogleAuthResult(result: ActivityResult) {
@@ -215,6 +231,10 @@ class MainActivity : FragmentActivity() {
                 GLogger.e("status: $it}")
             }
             Portkey.sendGoogleAuthResult(null)
+        }
+        CoroutineScope(Dispatchers.IO).launch {
+            delay(200)
+            thenSignOut(context = this@MainActivity)
         }
     }
 }

@@ -1,13 +1,21 @@
 package io.aelf.portkey.tools.friendly
 
+import android.graphics.Rect
+import android.os.Build
+import android.view.ViewTreeObserver
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalView
 
 @Composable
 fun UseComponentDidMount(callback: () -> Unit) {
@@ -22,6 +30,33 @@ fun UseEffect(vararg dependency: Any?, callback: () -> Unit) {
     LaunchedEffect(den) {
         callback()
     }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun UseKeyboardVisibleState(): State<Boolean> {
+    var keyboardVisible = remember {
+        mutableStateOf(false)
+    }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        val view = LocalView.current
+        DisposableEffect(view) {
+            val onKeyboardChangeListener = ViewTreeObserver.OnGlobalLayoutListener {
+                val rect = Rect()
+                view.getWindowVisibleDisplayFrame(rect)
+                val screenHeight = view.rootView.height
+                val keypadHeight = screenHeight - rect.bottom
+                keyboardVisible.value = keypadHeight > screenHeight * 0.15
+            }
+            view.viewTreeObserver.addOnGlobalLayoutListener(onKeyboardChangeListener)
+            onDispose {
+                view.viewTreeObserver.removeOnGlobalLayoutListener(onKeyboardChangeListener)
+            }
+        }
+    } else {
+        keyboardVisible.value = WindowInsets.isImeVisible
+    }
+    return keyboardVisible
 }
 
 @Composable

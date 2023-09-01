@@ -203,7 +203,7 @@ private fun Texts(info: GuardianDTO, state: OutsideStateEnum) {
             textAlign = TextAlign.Start,
             lineHeight = 22.sp,
             color = Color(0xFF162736),
-            fontWeight = FontWeight.ExtraBold,
+            fontWeight = FontWeight(500),
             overflow = TextOverflow.Ellipsis,
         )
         if (!TextUtils.isEmpty(guardianIdentifier) && state != OutsideStateEnum.Register) {
@@ -233,7 +233,7 @@ private fun getGuardianName(info: GuardianDTO): String {
         }
 
         else -> {
-            info.name ?: info.type
+            info.guardianIdentifier ?:info.name
         }
     }
 }
@@ -250,7 +250,7 @@ private fun getGuardianIdentifier(info: GuardianDTO): String {
         }
 
         else -> {
-            info.guardianIdentifier ?: info.type
+            ""
         }
     }
 }

@@ -177,6 +177,7 @@ internal object Dialog {
                     }
                     bgColor = Color.White
                     textColor = Color(0xFF414852)
+                    borderWidth = 1.dp
                 })
                 MediumButton(config = ButtonConfig().apply {
                     text = dialogProps.positiveText

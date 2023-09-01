@@ -35,7 +35,7 @@ import io.aelf.portkey.core.stage.social_recovery.SocialRecoveryStageEnum
 import io.aelf.portkey.entity.static.guardian_controller.GuardianController
 import io.aelf.portkey.entity.static.guardian_controller.GuardianInfo
 import io.aelf.portkey.entity.static.guardian_controller.OutsideStateEnum
-import io.aelf.portkey.entity.static.verify_box.VerifyCodeInputBox
+import io.aelf.portkey.entity.static.verify_box.useVerifyCodeInputBox
 import io.aelf.portkey.entity.static.verify_box.VerifyCodeInputBoxInterface
 import io.aelf.portkey.tools.friendly.DynamicWidth
 import io.aelf.portkey.tools.friendly.UseComponentDidMount
@@ -117,7 +117,7 @@ private fun RegisterPageBody() {
                 .padding(top = 2.dp, bottom = 40.dp)
         )
         GuardianController(info = guardianInfo, modifier = Modifier.padding(bottom = 40.dp))
-        verifyCodeBoxHandler = VerifyCodeInputBox(
+        verifyCodeBoxHandler = useVerifyCodeInputBox(
             onTextChange = {
                 scope.launch(Dispatchers.IO) {
                     checkInputCode(it, scope, context, keyboard)

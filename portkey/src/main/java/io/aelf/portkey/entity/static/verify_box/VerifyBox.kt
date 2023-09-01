@@ -32,42 +32,56 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.aelf.portkey.tools.friendly.DynamicWidth
+import io.aelf.portkey.tools.friendly.UseKeyboardVisibleState
 
 @Composable
 private fun VerifyCodeInputBoxItem(
     modifier: Modifier = Modifier,
     fontSize: TextUnit = 24.sp,
-    color: Color = Color(0xFF121A26),
+    color: Color = Color(0xFF162736),
     fontWeight: FontWeight = FontWeight(700),
-    text: String = "1"
+    text: String = "1",
+    showAsCursor: Boolean = false
 ) {
     Box(
         modifier = modifier
             .background(color = Color(0xFFFCFCFF), shape = RoundedCornerShape(8.dp))
             .border(width = 1.dp, color = Color(0xFFEDEFF5), shape = RoundedCornerShape(8.dp))
     ) {
-        Text(
-            text = text,
-            fontSize = fontSize,
-            color = color,
-            fontWeight = fontWeight,
-            modifier = Modifier.align(Alignment.Center)
-        )
+        if (showAsCursor) {
+            // TODO animation should be added here
+            Box(
+                modifier = Modifier
+                    .width(2.dp)
+                    .height(24.dp)
+                    .align(Alignment.Center)
+                    .background(Color(0xFF4285F4))
+            )
+        } else {
+            Text(
+                text = text,
+                fontSize = fontSize,
+                color = color,
+                fontWeight = fontWeight,
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
     }
 }
 
 @Composable
-internal fun VerifyCodeInputBox(
+internal fun useVerifyCodeInputBox(
     modifier: Modifier = Modifier,
     size: Int = 6,
     boxSpacerSize: Dp = 6.4.dp,
     keyboardOptions: KeyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-    provideItem: @Composable RowScope.(text: String) -> Unit = {
+    provideItem: @Composable RowScope.(text: String, showAsCursor: Boolean) -> Unit = { text: String, showAsCursor: Boolean ->
         VerifyCodeInputBoxItem(
             modifier = Modifier
                 .weight(1f, true)
                 .fillMaxHeight(),
-            text = it
+            text = text,
+            showAsCursor = showAsCursor
         )
     },
     enable: Boolean = true,
@@ -78,11 +92,11 @@ internal fun VerifyCodeInputBox(
             TextFieldValue(text = "", selection = TextRange(Int.MAX_VALUE))
         )
     }
-
     val clearCodeInput: () -> Unit = {
         code = TextFieldValue(text = "", selection = TextRange(Int.MAX_VALUE))
     }
 
+    val keyboardFocused by UseKeyboardVisibleState()
     BasicTextField(
         value = code,
         onValueChange = {
@@ -109,8 +123,8 @@ internal fun VerifyCodeInputBox(
                 ) {
                     for (i in 0 until size) {
                         provideItem(
-                            this,
-                            if (code.text.length > i) code.text.substring(i, i + 1) else ""
+                            if (code.text.length > i) code.text.substring(i, i + 1) else "",
+                            keyboardFocused && i == code.text.length
                         )
                     }
                 }
@@ -130,7 +144,7 @@ internal interface VerifyCodeInputBoxInterface {
 @Preview
 @Composable
 private fun VerifyBoxPreview() {
-    VerifyCodeInputBox(
+    useVerifyCodeInputBox(
         modifier = Modifier
             .height(56.dp)
             .width(DynamicWidth(paddingHorizontal = 20))

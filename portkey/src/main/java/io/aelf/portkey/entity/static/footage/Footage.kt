@@ -19,7 +19,7 @@ internal fun PortkeyFootage() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(25.dp),
+            .height(36.dp),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.Center
     ) {

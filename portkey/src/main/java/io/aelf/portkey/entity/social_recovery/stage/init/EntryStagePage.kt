@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -129,6 +130,7 @@ private fun InputEmailPage() {
             modifier = Modifier
                 .padding(top = 40.dp)
                 .width(DynamicWidth(20))
+                .height(50.dp)
                 .border(width = 1.dp, color = Color(0xFFEDEFF5), shape = RoundedCornerShape(8.dp)),
             shape = RoundedCornerShape(8.dp),
             keyboardOptions = KeyboardOptions.Default.copy(
@@ -141,6 +143,12 @@ private fun InputEmailPage() {
                     commitCheck(email)
                 }
             ),
+            textStyle = TextStyle(
+                fontSize = 14.sp,
+                lineHeight = 22.sp,
+                fontWeight = FontWeight(500),
+                color = Color(0xFF162736)
+            ),
             singleLine = true,
             placeholder = {
                 Text(
@@ -148,7 +156,7 @@ private fun InputEmailPage() {
                     style = TextStyle(
                         color = Color(0xFF8F949C),
                         fontSize = 14.sp,
-                        lineHeight = 20.sp
+                        lineHeight = 22.sp
                     ),
                     textAlign = TextAlign.Center
                 )
@@ -156,7 +164,8 @@ private fun InputEmailPage() {
             colors = TextFieldDefaults.textFieldColors(
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
-                backgroundColor = Color.White
+                backgroundColor = Color.White,
+                cursorColor = Color(0xFF4285F4),
             )
         )
         ErrorMsg(text = errorMsg, paddingTop = 4, paddingBottom = 10)
@@ -166,6 +175,7 @@ private fun InputEmailPage() {
                 keyboard?.hide()
                 commitCheck(email)
             }
+            borderWidth = 1.dp
         }, enable = commitButtonEnable)
     }
 }

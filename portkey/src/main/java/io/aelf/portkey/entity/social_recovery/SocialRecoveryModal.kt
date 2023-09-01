@@ -173,15 +173,21 @@ internal object SocialRecoveryModal : ModalController {
                     }
                 }
             }
-            Column(
+            Box(
                 modifier = Modifier
+                    .fillMaxSize()
                     .zIndex(ZIndexConfig.Modal.getZIndex())
-                    .background(backgroundColor)
-                    .fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Bottom
             ) {
-                ModalBody()
+                Column(
+                    modifier = Modifier
+                        .background(backgroundColor)
+                        .zIndex(ZIndexConfig.Modal.getZIndex()+1)
+                        .fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Bottom
+                ) {
+                    ModalBody()
+                }
             }
         }
     }
@@ -255,7 +261,7 @@ internal object SocialRecoveryModal : ModalController {
                 .fillMaxHeight(heightPercent)
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
-                .zIndex(ZIndexConfig.Modal.getZIndex())
+                .zIndex(ZIndexConfig.Modal.getZIndex() + 1)
                 .background(Color.White),
             contentAlignment = Alignment.Center
         ) {
@@ -350,7 +356,8 @@ internal object SocialRecoveryModal : ModalController {
                                 it()
                             }
                         }
-                    )
+                    ),
+                tint = Color(0xFF414852)
             )
             Icon(
                 painter = painterResource(id = R.drawable.close_icon),
@@ -362,10 +369,9 @@ internal object SocialRecoveryModal : ModalController {
                             MutableInteractionSource()
                         },
                         onClick = SocialRecoveryModal::closeModal
-                    )
-
+                    ),
+                tint = Color(0xFF414852)
             )
-
         }
     }
 }

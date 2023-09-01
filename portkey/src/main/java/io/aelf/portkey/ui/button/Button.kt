@@ -32,13 +32,17 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import io.aelf.portkey.sdk.R
 import io.aelf.portkey.component.global.NullableTools.dpOrDefault
+import io.aelf.portkey.sdk.R
 import io.aelf.portkey.tools.friendly.DynamicWidth
 import io.aelf.portkey.ui.basic.ZIndexConfig
 
 @Composable
-fun HugeButton(config: ButtonConfig, enable: Boolean = true, icon: IconConfig? = null) {
+fun HugeButton(
+    config: ButtonConfig,
+    enable: Boolean = true,
+    icon: IconConfig? = null,
+) {
     Box(
         modifier = Modifier
             .height(50.dp)
@@ -105,7 +109,7 @@ private fun Button(config: ButtonConfig, enable: Boolean) {
             .width(config.width),
         colors = ButtonDefaults.textButtonColors(
             containerColor = config.bgColor,
-            disabledContainerColor = Color(0xFF8F949C).copy(alpha = 0.1F)
+            disabledContainerColor = Color(0xFFDFE4EC)
         ),
         border = BorderStroke(config.borderWidth, config.borderColor),
         shape = RoundedCornerShape(8.dp),
@@ -136,7 +140,7 @@ open class ButtonConfig {
     var fontWeight: Int = 500
     var fontSize: TextUnit = 14.sp
     var lineHeight: TextUnit = 22.sp
-    var borderWidth: Dp = 1.dp
+    var borderWidth: Dp = 0.dp
     var borderColor: Color = Color(0xFFEDEFF5)
     var hoverColor: Color = Color(0xCC4285F4)
     var onClick: () -> Unit = {}
