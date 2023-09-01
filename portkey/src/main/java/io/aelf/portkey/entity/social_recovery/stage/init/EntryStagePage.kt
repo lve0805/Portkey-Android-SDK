@@ -164,7 +164,7 @@ private fun InputEmailPage() {
             colors = TextFieldDefaults.textFieldColors(
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
-                backgroundColor = Color.White,
+                backgroundColor = Color(0xFFFCFCFF),
                 cursorColor = Color(0xFF4285F4),
             )
         )
@@ -349,7 +349,8 @@ private fun LoginPathSelector() {
             onClick = ::enterInputEmailPage
         }, icon = IconConfig().apply {
             iconResId = R.drawable.email_icon
-        })
+        }
+        )
     }
 }
 

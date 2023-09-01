@@ -132,7 +132,12 @@ private fun GuardianVerifyStatusBar() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            RichText(text = "Guardians' Approval", maxLine = 1)
+            Text(text = "Guardians' Approval",
+                fontSize = 14.sp,
+                lineHeight = 22.sp,
+                color= Color(0xFF8F949C),
+                fontWeight = FontWeight(400)
+            )
             Distance(width = 4)
             Icon(
                 painter = painterResource(id = R.drawable.question_icon),

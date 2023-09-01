@@ -106,7 +106,8 @@ private fun Button(config: ButtonConfig, enable: Boolean) {
         onClick = config.onClick,
         modifier = Modifier
             .height(config.height)
-            .width(config.width),
+            .width(config.width)
+        ,
         colors = ButtonDefaults.textButtonColors(
             containerColor = config.bgColor,
             disabledContainerColor = Color(0xFFDFE4EC)
