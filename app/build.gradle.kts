@@ -18,7 +18,7 @@ android {
     signingConfigs {
 
         getByName("debug") {
-            storeFile = file("./test.keystore")
+            storeFile = file("../test.keystore")
             storePassword = "123456"
             keyAlias = "key0"
             keyPassword = "123456"

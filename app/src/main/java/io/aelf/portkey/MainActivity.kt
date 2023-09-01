@@ -176,8 +176,8 @@ class MainActivity : FragmentActivity() {
                                 when (it) {
                                     "MainNet" -> "https://did-portkey.portkey.finance"
                                     "TestNet" -> "https://did-portkey-test.portkey.finance"
-                                    "Text1" -> "https://testnet-applesign.portkey.finance"
-                                    "Test2" -> "https://testnet-applesign2.portkey.finance"
+                                    "Test1" -> "https://localtest-applesign.portkey.finance"
+                                    "Test2" -> "https://localtest-applesign2.portkey.finance"
                                     else -> "https://testnet-applesign.portkey.finance"
                                 }
                             )
