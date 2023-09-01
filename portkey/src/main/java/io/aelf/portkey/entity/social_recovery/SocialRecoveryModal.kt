@@ -317,7 +317,7 @@ internal object SocialRecoveryModal : ModalController {
     private fun determineHeightPercent(): Float {
         return when (WalletLifecyclePresenter.stageEnum) {
             SocialRecoveryStageEnum.UNLOCK -> {
-                0.93f
+                0.96f
             }
 
             else -> {

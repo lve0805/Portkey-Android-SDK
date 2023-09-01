@@ -267,6 +267,7 @@ private fun LeaveBiometricVerifyButton() {
                 }
                 bgColor = Color.White
                 textColor = Color.Black
+                borderWidth=1.dp
             },
         )
     }

@@ -347,6 +347,7 @@ private fun LoginPathSelector() {
             bgColor = Color(0xFFFFFFFF)
             textColor = Color(0xFF162736)
             onClick = ::enterInputEmailPage
+            borderWidth = 1.dp
         }, icon = IconConfig().apply {
             iconResId = R.drawable.email_icon
         }
