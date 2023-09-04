@@ -59,37 +59,42 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
-    implementation("com.google.android.gms:play-services-auth:20.6.0")
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1")
+    implementation("io.coil-kt:coil-compose:2.4.0")
+
+    //Portkey's core Java SDK
+    implementation("io.aelf:portkey-java-sdk:0.0.7-SNAPSHOT") {
+        isChanging = true
+        // Portkey's Java SDK uses FastKV dependency with the same name as the one used by the Android app, so it needs to be excluded.
+        exclude("io.github.billywei01")
+        // org.bouncycastle's dependency will conflict with each other
+        exclude("org.bouncycastle")
+        exclude("org.realityforge.org.jetbrains.annotations")
+    }
+
+    implementation("org.bouncycastle:bcprov-jdk15on:1.69")
+
+    // https://mvnrepository.com/artifact/io.github.billywei01/fastkv
+    implementation("io.github.billywei01:fastkv:2.3.0")
+    implementation("io.coil-kt:coil-compose:2.4.0")
+
+    // Google's dependency
+    implementation("com.google.android.gms:play-services-safetynet:18.0.1")
+    implementation("androidx.biometric:biometric:1.2.0-alpha05")
+
+    implementation("com.airbnb.android:lottie:6.1.0")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+
     testImplementation("junit:junit:4.13.2")
+    debugImplementation("androidx.compose.ui:ui-tooling")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     androidTestImplementation(platform("androidx.compose:compose-bom:2023.03.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
-    debugImplementation("androidx.compose.ui:ui-tooling")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
-    implementation("io.github.oleksandrbalan:modalsheet:0.6.0")
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1")
-    implementation("io.coil-kt:coil-compose:2.4.0")
-    implementation("org.bouncycastle:bcprov-jdk15on:1.67")
-    implementation("androidx.biometric:biometric:1.2.0-alpha05")
 
-
-
-    implementation("io.aelf:portkey-java-sdk:0.0.7-SNAPSHOT") {
-        isChanging = true
-        exclude("io.github.billywei01")
-        exclude("org.bouncycastle")
-        exclude("org.realityforge.org.jetbrains.annotations")
-    }
-    // https://mvnrepository.com/artifact/io.github.billywei01/fastkv
-    implementation("io.github.billywei01:fastkv:2.1.3")
-    implementation("com.afollestad.material-dialogs:bottomsheets:3.3.0")
-    implementation("io.coil-kt:coil-compose:2.4.0")
-
-    //dependency for the reCAPTCHA (safetynet)
-    implementation("com.google.android.gms:play-services-safetynet:18.0.1")
-    implementation("com.airbnb.android:lottie:6.1.0")
+    implementation("com.lightspark:compose-qr-code:1.0.1")
 
     // Solve the conflict problem... LOL
     implementation("com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava")

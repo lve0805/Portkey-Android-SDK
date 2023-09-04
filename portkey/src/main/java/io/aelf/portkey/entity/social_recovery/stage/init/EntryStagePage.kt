@@ -192,7 +192,7 @@ private suspend fun authCheck(
 ) {
     Loading.showLoading("Checking on-chain data...")
     val checkDeferred = scope.launch(Dispatchers.IO) {
-        var entry: CheckedEntry?
+        val entry: CheckedEntry?
         try {
             entry =
                 EntryBehaviourEntity.attemptAccountCheck(
@@ -341,8 +341,7 @@ private fun LoginPathSelector() {
         }, icon = IconConfig().apply {
             iconResId = R.drawable.google_icon
             tintColor = Color.White
-        },
-            enable = SocialRecoveryModal.isGoogleLoginEnabled()
+        }
         )
         Divider()
         HugeButton(config = ButtonConfig().apply {
@@ -364,7 +363,7 @@ internal fun continueEntryWithGoogleToken(googleAccount: GoogleSignInAccount) {
             { token, scope, context ->
                 run {
                     scope.launch(Dispatchers.IO) {
-                        var accessToken: String?
+                        val accessToken: String?
                         try {
                             accessToken = NetworkService.getInstance()
                                 .getGoogleAuthResult(googleAccount.serverAuthCode ?: "")

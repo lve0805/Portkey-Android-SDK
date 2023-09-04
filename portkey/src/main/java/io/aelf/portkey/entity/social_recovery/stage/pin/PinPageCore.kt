@@ -78,23 +78,31 @@ private var pinValue by mutableStateOf("")
 private const val CONTROL_DELETE = "^"
 private const val CONTROL_BIOMETRIC = "&"
 
+private val itemControlList = listOf(
+    "123",
+    "456",
+    "789",
+    CONTROL_BIOMETRIC + "0" + CONTROL_DELETE
+)
+
+
 @Synchronized
-fun setErrorMsgs(msg: String) {
+fun setThisErrorMsg(msg: String) {
     errorMsg = msg
 }
 
 @Synchronized
-fun setPinValues(value: String) {
+fun setThisPinValue(value: String) {
     pinValue = value
 }
 
 @Synchronized
-fun setRepeatPinValues(value: String) {
+fun setThisRepeatPinValue(value: String) {
     repeatPinValue = value
 }
 
 @Synchronized
-fun setPinsValueByAppends(value: String, context: Context) {
+fun setPinsValueByAppend(value: String, context: Context) {
     if (repeat) {
         if (repeatPinValue.length >= PIN_LENGTH) {
             return
@@ -112,7 +120,7 @@ fun setPinsValueByAppends(value: String, context: Context) {
 
 @Synchronized
 fun rmCharFromLast() {
-    setErrorMsgs("")
+    setThisErrorMsg("")
     if (repeat) {
         if (repeatPinValue.isNotEmpty()) {
             repeatPinValue = repeatPinValue.substring(0, repeatPinValue.length - 1)
@@ -139,8 +147,8 @@ internal fun PinPagePresenter(controlType: PinPageType) {
     val context = LocalContext.current
 
     UseComponentWillUnmount {
-        setPinValues("")
-        setErrorMsgs("")
+        setThisPinValue("")
+        setThisErrorMsg("")
         clearUp()
     }
     if (!verifyBiometric) {
@@ -216,7 +224,7 @@ internal fun PinPagePresenter(controlType: PinPageType) {
 
 @Composable
 private fun PinInput() {
-    listOf("123", "456", "789", CONTROL_BIOMETRIC + "0" + CONTROL_DELETE).map {
+    itemControlList.map {
         PinInputLine(
             controlValue = it,
         )
@@ -233,7 +241,7 @@ private fun useBiometric(
                 if (type == PinPageType.VERIFY) {
                     val extraPinValue = getExtraPinValue()
                     if (TextUtils.isEmpty(extraPinValue)) {
-                        setErrorMsgs("biometric verify failed, please try again")
+                        setThisErrorMsg("biometric verify failed, please try again")
                         return@success
                     } else {
                         checkPinVerifyFromBioPin(extraPinValue)
@@ -267,7 +275,7 @@ private fun LeaveBiometricVerifyButton() {
                 }
                 bgColor = Color.White
                 textColor = Color.Black
-                borderWidth=1.dp
+                borderWidth = 1.dp
             },
         )
     }
@@ -306,7 +314,7 @@ private fun PinInputItem(
 
     fun handleClick() {
         if (regex0To9.matches(controlValue)) {
-            setPinsValueByAppends(controlValue, context)
+            setPinsValueByAppend(controlValue, context)
         } else if (CONTROL_DELETE == controlValue) {
             rmCharFromLast()
         } else if (CONTROL_BIOMETRIC == controlValue) {
@@ -461,7 +469,7 @@ private fun handlePinValue(
     scope: CoroutineScope,
     context: Context
 ) {
-    setErrorMsgs("")
+    setThisErrorMsg("")
     if (repeat) {
         if (repeatPinValue.length != PIN_LENGTH) {
             return
@@ -491,7 +499,7 @@ private fun checkPinCreate(context: Context) {
     val setPin = WalletLifecyclePresenter.setPin ?: return
     if (repeat) {
         if (repeatPinValue != pinValue) {
-            clearAndReportErrRepeat("pin not match")
+            clearAndReportErrRepeat()
             return
         }
     } else {
@@ -574,7 +582,7 @@ private fun checkPinVerifyFromBioPin(pin: String) {
     val unlock = WalletLifecyclePresenter.unlock ?: return
     val result = unlock.checkPin(pin)
     if (!result) {
-        setErrorMsgs("internal err")
+        setThisErrorMsg("internal err")
         return
     }
     WalletLifecyclePresenter.wallet = unlock.unlockAndBuildWallet(pin)
@@ -582,16 +590,16 @@ private fun checkPinVerifyFromBioPin(pin: String) {
 }
 
 private fun clearAndReportErrRepeat(
-    errMsg: String
+    errMsg: String = "pin not match"
 ) {
-    setRepeatPinValues("")
-    setErrorMsgs(errMsg)
+    setThisRepeatPinValue("")
+    setThisErrorMsg(errMsg)
     return
 }
 
 private fun clearAndReportErr(errMsg: String) {
-    setPinValues("")
-    setErrorMsgs(errMsg)
+    setThisPinValue("")
+    setThisErrorMsg(errMsg)
     return
 }
 

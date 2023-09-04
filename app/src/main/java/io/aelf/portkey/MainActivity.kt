@@ -90,26 +90,27 @@ class MainActivity : FragmentActivity() {
                 }
             )
         val props = remember {
-            SocialRecoveryModalProps().apply {
+            SocialRecoveryModalProps(
                 onUserCancel = {
                     GLogger.w("onUserCancel")
                     showToast("onUserCancel")
                     modalOpen = false
-                }
+                },
                 onSuccess = {
                     GLogger.w("onSuccess")
                     showToast("onSuccess")
                     modalOpen = false
-                }
+                },
                 onError = {
                     GLogger.e("onError", it)
                     showToast("onError:${it.message}")
                     modalOpen = false
-                }
+                },
                 onUseGoogleAuthService = {
+                    googleSignInCallback = it
                     useGoogleLogin(context)
                 }
-            }
+            )
         }
         Column(
             modifier = Modifier

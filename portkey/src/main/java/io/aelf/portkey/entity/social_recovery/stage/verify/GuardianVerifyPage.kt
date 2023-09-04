@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -35,8 +34,8 @@ import io.aelf.portkey.core.stage.social_recovery.SocialRecoveryStageEnum
 import io.aelf.portkey.entity.static.guardian_controller.GuardianController
 import io.aelf.portkey.entity.static.guardian_controller.GuardianInfo
 import io.aelf.portkey.entity.static.guardian_controller.OutsideStateEnum
-import io.aelf.portkey.entity.static.verify_box.useVerifyCodeInputBox
 import io.aelf.portkey.entity.static.verify_box.VerifyCodeInputBoxInterface
+import io.aelf.portkey.entity.static.verify_box.useVerifyCodeInputBox
 import io.aelf.portkey.tools.friendly.DynamicWidth
 import io.aelf.portkey.tools.friendly.UseComponentDidMount
 import io.aelf.portkey.ui.basic.ErrorMsg
@@ -58,7 +57,7 @@ internal const val COUNT_DOWN_TIME_LIMIT = 60
 
 private var sent by mutableStateOf(false)
 private var errorMsg by mutableStateOf("")
-private var countDown by mutableIntStateOf(-1)
+private var countDown by mutableStateOf(-1)
 private const val CODE_LENGTH = 6
 
 private var verifyCodeBoxHandler: VerifyCodeInputBoxInterface? = null
