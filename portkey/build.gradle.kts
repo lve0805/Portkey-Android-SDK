@@ -68,12 +68,7 @@ dependencies {
         isChanging = true
         // Portkey's Java SDK uses FastKV dependency with the same name as the one used by the Android app, so it needs to be excluded.
         exclude("io.github.billywei01")
-        // org.bouncycastle's dependency will conflict with each other
-        exclude("org.bouncycastle")
-        exclude("org.realityforge.org.jetbrains.annotations")
     }
-
-    implementation("org.bouncycastle:bcprov-jdk15on:1.69")
 
     // https://mvnrepository.com/artifact/io.github.billywei01/fastkv
     implementation("io.github.billywei01:fastkv:2.3.0")

@@ -113,9 +113,6 @@ dependencies {
         isChanging = true
         // Portkey's Java SDK uses FastKV dependency with the same name as the one used by the Android app, so it needs to be excluded.
         exclude("io.github.billywei01")
-        // org.bouncycastle's dependency will conflict with each other
-        exclude("org.bouncycastle")
-        exclude("org.realityforge.org.jetbrains.annotations")
     }
 
     testImplementation("junit:junit:4.13.2")
