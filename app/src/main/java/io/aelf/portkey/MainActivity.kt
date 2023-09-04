@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.fragment.app.FragmentActivity
 import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.common.api.ApiException
 import io.aelf.portkey.component.stub.PortkeySDKViewStub
 import io.aelf.portkey.entity.social_recovery.SocialRecoveryModalProps
@@ -58,20 +59,19 @@ import kotlinx.coroutines.launch
 
 @Suppress("DEPRECATION")
 class MainActivity : FragmentActivity() {
-
-
     private var modalOpen by mutableStateOf(false)
     private var googleAuthLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>? = null
+    private var googleSignInCallback: (GoogleSignInAccount?) -> Unit = {}
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            ModalPreview()
+            EntryComponent()
         }
     }
 
     @Composable
-    fun ModalPreview() {
+    fun EntryComponent() {
         val context = LocalContext.current
         val scope = rememberCoroutineScope()
         UseComponentDidMount {
@@ -142,8 +142,22 @@ class MainActivity : FragmentActivity() {
                 }
             )
             ServiceEnvironment()
+            HugeButton(
+                config = ButtonConfig().apply {
+                    text = "Goto Guardian Page"
+                    onClick = guardian@{
+                        if (modalOpen) return@guardian
+                        jumpToGuardianActivity()
+                    }
+                }
+            )
         }
         PortkeySDKViewStub()
+    }
+
+    private fun jumpToGuardianActivity() {
+        val intent = Intent(this, GuardianActivity::class.java)
+        startActivity(intent)
     }
 
     @Composable
@@ -224,13 +238,13 @@ class MainActivity : FragmentActivity() {
             val account = task.getResult(ApiException::class.java)
             // Signed in successfully, show authenticated UI.
             GLogger.w("signInResult:success, account: $account")
-            Portkey.sendGoogleAuthResult(account)
+            googleSignInCallback(account)
         } else {
             GLogger.e("login failed.")
             result.data?.extras?.get(result.data?.extras?.keySet()?.elementAt(0))?.let {
                 GLogger.e("status: $it}")
             }
-            Portkey.sendGoogleAuthResult(null)
+            googleSignInCallback(null)
         }
         CoroutineScope(Dispatchers.IO).launch {
             delay(200)

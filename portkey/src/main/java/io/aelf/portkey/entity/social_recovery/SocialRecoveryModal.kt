@@ -101,7 +101,7 @@ internal object SocialRecoveryModal : ModalController {
             })
         } else if (WalletLifecyclePresenter.stageEnum == SocialRecoveryStageEnum.INIT) {
             continueEntryWithGoogleToken(googleAccount)
-        }else if(WalletLifecyclePresenter.stageEnum == SocialRecoveryStageEnum.READY_TO_LOGIN){
+        } else if (WalletLifecyclePresenter.stageEnum == SocialRecoveryStageEnum.READY_TO_LOGIN) {
             continueVerifyWithGoogleAccount(googleAccount)
         }
     }
@@ -120,7 +120,9 @@ internal object SocialRecoveryModal : ModalController {
             return
         }
         Loading.showLoading("Checking Google Account...")
-        onUseGoogleAuthService()
+        onUseGoogleAuthService{
+            sendGoogleToken(it)
+        }
     }
 
     override fun closeModal() {
@@ -390,7 +392,7 @@ open class SocialRecoveryModalProps {
     var onUserCancel: (() -> Unit)? = null
     var onSuccess: (() -> Unit)? = null
     var onError: ((AElfException) -> Unit)? = null
-    var onUseGoogleAuthService: (() -> Unit)? = null
+    var onUseGoogleAuthService: (((GoogleSignInAccount?) -> Unit) -> Unit)? = null
 }
 
 
