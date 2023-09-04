@@ -40,20 +40,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import io.aelf.portkey.behaviour.guardian.GuardianBehaviourEntity
 import io.aelf.portkey.behaviour.login.LoginBehaviourEntity
 import io.aelf.portkey.core.presenter.WalletLifecyclePresenter
+import io.aelf.portkey.entity.social_recovery.SocialRecoveryModal
 import io.aelf.portkey.entity.static.guardian_controller.GuardianController
 import io.aelf.portkey.entity.static.guardian_controller.GuardianInfo
 import io.aelf.portkey.entity.static.guardian_controller.OutsideStateEnum
 import io.aelf.portkey.internal.model.common.AccountOriginalType
+import io.aelf.portkey.internal.model.google.GoogleAccount
+import io.aelf.portkey.network.connecter.NetworkService
 import io.aelf.portkey.sdk.R
 import io.aelf.portkey.tools.friendly.DynamicWidth
 import io.aelf.portkey.tools.friendly.UseComponentDidMount
 import io.aelf.portkey.tools.friendly.UseComponentWillUnmount
+import io.aelf.portkey.tools.friendly.convertGoogleAccount
 import io.aelf.portkey.tools.timeout.useTimeout
 import io.aelf.portkey.ui.basic.Distance
 import io.aelf.portkey.ui.basic.HugeTitle
+import io.aelf.portkey.ui.basic.Toast
 import io.aelf.portkey.ui.button.ButtonConfig
 import io.aelf.portkey.ui.button.HugeButton
 import io.aelf.portkey.ui.dialog.Dialog
@@ -61,6 +67,7 @@ import io.aelf.portkey.ui.dialog.DialogProps
 import io.aelf.portkey.ui.loading.Loading
 import io.aelf.portkey.ui.rich_text.RichText
 import io.aelf.portkey.utils.log.GLogger
+import io.aelf.utils.AElfException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -69,13 +76,20 @@ import kotlinx.coroutines.launch
 
 private var isExpired by mutableStateOf(false)
 private var setExpiredJob: Job? = null
+private var loginPageHandler: (((scope: CoroutineScope, context: Context) -> Unit) -> Unit)? = null
+private var awaitingGoogleGuardian: GuardianBehaviourEntity? = null
 
 @Composable
 internal fun LoginStagePage() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     if (WalletLifecyclePresenter.activeGuardian != null) {
         GuardianPage()
     } else {
         LoginMainBody()
+    }
+    loginPageHandler = {
+        it(scope, context)
     }
     UseComponentWillUnmount {
         cleanUp()
@@ -132,10 +146,11 @@ private fun GuardianVerifyStatusBar() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            Text(text = "Guardians' Approval",
+            Text(
+                text = "Guardians' Approval",
                 fontSize = 14.sp,
                 lineHeight = 22.sp,
-                color= Color(0xFF8F949C),
+                color = Color(0xFF8F949C),
                 fontWeight = FontWeight(400)
             )
             Distance(width = 4)
@@ -290,16 +305,64 @@ private fun GuardianInfoList() {
     }
 }
 
+private fun launchGoogleLoginService(
+) {
+    SocialRecoveryModal.checkGoogleToken()
+}
+
+internal fun continueVerifyWithGoogleAccount(googleAccount: GoogleSignInAccount) {
+    loginPageHandler?.let {
+        it { scope, context ->
+            run {
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        val accessToken = NetworkService.getInstance()
+                            .getGoogleAuthResult(googleAccount.serverAuthCode ?: "")
+                            .access_token
+                        googleGuardianVerify(
+                            scope,
+                            awaitingGoogleGuardian,
+                            context,
+                            convertGoogleAccount(googleAccount, accessToken)
+                        )
+                    } catch (e: Throwable) {
+                        GLogger.e("error when checking google account.", AElfException(e))
+                        Toast.showToast(
+                            context,
+                            "Sorry but the sever was not responding, please try again later."
+                        )
+                        Loading.hideLoading()
+                        return@launch
+                    }
+                }
+            }
+        }
+    }
+}
+
 private suspend fun googleGuardianVerify(
     scope: CoroutineScope,
-    guardian: GuardianBehaviourEntity,
-    context: Context
+    guardian: GuardianBehaviourEntity?,
+    context: Context,
+    googleAccount: GoogleAccount? = null
 ) {
+    if (guardian == null) return
     Loading.showLoading("Verifying...")
     val job = scope.launch(Dispatchers.IO) {
         // google's guardian
         try {
-            val result = guardian.verifyVerificationCode("FAKE")
+            val shouldLaunchGoogleService =
+                guardian.requireOutsideGoogleAccount() && googleAccount == null
+            if (shouldLaunchGoogleService) {
+                awaitingGoogleGuardian = guardian
+                launchGoogleLoginService()
+                return@launch
+            }
+            val result = if (guardian.requireOutsideGoogleAccount()) {
+                guardian.verifyVerificationCodeWithGoogle(googleAccount!!)
+            } else {
+                guardian.verifyVerificationCodeWithGoogle()
+            }
             if (result) {
                 Loading.hideLoading()
                 forceRecomposition()
@@ -307,7 +370,6 @@ private suspend fun googleGuardianVerify(
             }
         } catch (e: Throwable) {
             GLogger.e("verifyVerificationCode error:${e.message}")
-
         }
         Dialog.show(DialogProps().apply {
             mainTitle = "Network failure"

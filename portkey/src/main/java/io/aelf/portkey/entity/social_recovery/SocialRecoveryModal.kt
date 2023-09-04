@@ -41,11 +41,12 @@ import io.aelf.portkey.core.presenter.WalletLifecyclePresenter
 import io.aelf.portkey.core.stage.social_recovery.SocialRecoveryStageEnum
 import io.aelf.portkey.debug.initDebug
 import io.aelf.portkey.entity.social_recovery.stage.init.EntryPage
-import io.aelf.portkey.entity.social_recovery.stage.init.continueWithGoogleToken
+import io.aelf.portkey.entity.social_recovery.stage.init.continueEntryWithGoogleToken
 import io.aelf.portkey.entity.social_recovery.stage.pin.SetPinStagePage
 import io.aelf.portkey.entity.social_recovery.stage.pin.UnlockStagePage
 import io.aelf.portkey.entity.social_recovery.stage.verify.LoginStagePage
 import io.aelf.portkey.entity.social_recovery.stage.verify.RegisterPage
+import io.aelf.portkey.entity.social_recovery.stage.verify.continueVerifyWithGoogleAccount
 import io.aelf.portkey.entity.static.footage.PortkeyFootage
 import io.aelf.portkey.sdk.R
 import io.aelf.portkey.tools.friendly.UseAndroidBackButtonSettings
@@ -82,6 +83,10 @@ internal object SocialRecoveryModal : ModalController {
         isShow = true
     }
 
+    internal fun isGoogleLoginEnabled(): Boolean {
+        return modalProps.onUseGoogleAuthService != null
+    }
+
     internal fun sendGoogleToken(googleAccount: GoogleSignInAccount?) {
         if (googleAccount == null || TextUtils.isEmpty(googleAccount.id)) {
             Loading.hideLoading()
@@ -94,8 +99,10 @@ internal object SocialRecoveryModal : ModalController {
                     checkGoogleToken()
                 }
             })
-        } else {
-            continueWithGoogleToken(googleAccount)
+        } else if (WalletLifecyclePresenter.stageEnum == SocialRecoveryStageEnum.INIT) {
+            continueEntryWithGoogleToken(googleAccount)
+        }else if(WalletLifecyclePresenter.stageEnum == SocialRecoveryStageEnum.READY_TO_LOGIN){
+            continueVerifyWithGoogleAccount(googleAccount)
         }
     }
 
@@ -107,8 +114,13 @@ internal object SocialRecoveryModal : ModalController {
     }
 
     internal fun checkGoogleToken() {
+        val onUseGoogleAuthService = modalProps.onUseGoogleAuthService
+        if (onUseGoogleAuthService == null) {
+            GLogger.e("onUseGoogleAuthService is not implemented!")
+            return
+        }
         Loading.showLoading("Checking Google Account...")
-        modalProps.onUseGoogleAuthService?.let { it() }
+        onUseGoogleAuthService()
     }
 
     override fun closeModal() {
@@ -145,12 +157,6 @@ internal object SocialRecoveryModal : ModalController {
         })
     }
 
-    internal fun forceCloseModal(exception: AElfException) {
-        isShow = false
-        WalletLifecyclePresenter.reset()
-        modalProps.onError?.let { it(exception) }
-    }
-
     @Composable
     internal fun SocialRecoveryModal() {
         val backgroundColor by animateColorAsState(
@@ -181,7 +187,7 @@ internal object SocialRecoveryModal : ModalController {
                 Column(
                     modifier = Modifier
                         .background(backgroundColor)
-                        .zIndex(ZIndexConfig.Modal.getZIndex()+1)
+                        .zIndex(ZIndexConfig.Modal.getZIndex() + 1)
                         .fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Bottom

@@ -53,6 +53,7 @@ import io.aelf.portkey.internal.model.google.GoogleAccount
 import io.aelf.portkey.network.connecter.NetworkService
 import io.aelf.portkey.sdk.R
 import io.aelf.portkey.tools.friendly.DynamicWidth
+import io.aelf.portkey.tools.friendly.convertGoogleAccount
 import io.aelf.portkey.tools.timeout.useTimeout
 import io.aelf.portkey.ui.basic.ErrorMsg
 import io.aelf.portkey.ui.basic.HugeTitle
@@ -340,7 +341,9 @@ private fun LoginPathSelector() {
         }, icon = IconConfig().apply {
             iconResId = R.drawable.google_icon
             tintColor = Color.White
-        })
+        },
+            enable = SocialRecoveryModal.isGoogleLoginEnabled()
+        )
         Divider()
         HugeButton(config = ButtonConfig().apply {
             text = "Login with Email"
@@ -355,7 +358,7 @@ private fun LoginPathSelector() {
     }
 }
 
-internal fun continueWithGoogleToken(googleAccount: GoogleSignInAccount) {
+internal fun continueEntryWithGoogleToken(googleAccount: GoogleSignInAccount) {
     entryPageHandler?.let {
         it(
             { token, scope, context ->
@@ -386,18 +389,6 @@ internal fun continueWithGoogleToken(googleAccount: GoogleSignInAccount) {
                 }
             }, googleAccount.id ?: ""
         )
-    }
-}
-
-private fun convertGoogleAccount(
-    googleAccount: GoogleSignInAccount,
-    givenAccountToken: String
-): GoogleAccount {
-    return GoogleAccount().apply {
-        id = googleAccount.id
-        email = googleAccount.email
-        idToken = googleAccount.idToken
-        accessToken = givenAccountToken
     }
 }
 

@@ -100,7 +100,6 @@ private fun RegisterPageBody() {
     }
     val keyboard = LocalSoftwareKeyboardController.current
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -120,7 +119,7 @@ private fun RegisterPageBody() {
         verifyCodeBoxHandler = useVerifyCodeInputBox(
             onTextChange = {
                 scope.launch(Dispatchers.IO) {
-                    checkInputCode(it, scope, context, keyboard)
+                    checkInputCode(it, scope, keyboard)
                 }
             },
             modifier = Modifier
@@ -233,7 +232,6 @@ private fun cleanUp() {
 internal fun checkInputCode(
     code: String,
     scope: CoroutineScope,
-    context: Context,
     keyboardController: SoftwareKeyboardController?
 ) {
     errorMsg = ""
