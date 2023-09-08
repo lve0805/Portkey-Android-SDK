@@ -39,7 +39,7 @@ import io.aelf.portkey.behaviour.guardian.GuardianBehaviourEntity
 import io.aelf.portkey.internal.model.common.AccountOriginalType
 import io.aelf.portkey.internal.model.guardian.GuardianDTO
 import io.aelf.portkey.sdk.R
-import io.aelf.portkey.tools.friendly.DynamicWidth
+import io.aelf.portkey.tools.friendly.dynamicWidth
 import io.aelf.portkey.ui.basic.ZIndexConfig
 import io.aelf.portkey.ui.button.ButtonConfig
 import io.aelf.portkey.ui.button.TinyButton
@@ -49,7 +49,7 @@ import org.jetbrains.annotations.Contract
 internal fun GuardianController(info: GuardianInfo, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
-            .width(DynamicWidth(paddingHorizontal = 20))
+            .width(dynamicWidth(paddingHorizontal = 20))
             .height(80.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(Color(0xFFF7F9FD)),
@@ -98,7 +98,7 @@ private fun Content(info: GuardianInfo) {
         val guardianDTO = guardianEntity.originalGuardianInfo
         Row(
             modifier = Modifier
-                .width(DynamicWidth(paddingHorizontal = 31))
+                .width(dynamicWidth(paddingHorizontal = 31))
                 .wrapContentHeight(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically

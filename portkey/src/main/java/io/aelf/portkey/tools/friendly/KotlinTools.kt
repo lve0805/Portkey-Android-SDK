@@ -6,7 +6,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import io.aelf.portkey.internal.model.google.GoogleAccount
-import io.aelf.portkey.internal.tools.GsonProvider
 import io.aelf.portkey.storage.IStorageBehaviour
 import io.aelf.portkey.storage.StorageProvider
 import kotlinx.coroutines.CoroutineScope
@@ -16,7 +15,7 @@ import kotlinx.coroutines.launch
 internal const val NETWORK_TIMEOUT = 15 * 1000L
 
 @Composable
-internal fun DynamicWidth(paddingHorizontal: Int = 0): Dp {
+internal fun dynamicWidth(paddingHorizontal: Int = 0): Dp {
     return (LocalConfiguration.current.screenWidthDp - 2 * paddingHorizontal).dp
 }
 

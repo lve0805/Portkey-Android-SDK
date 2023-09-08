@@ -52,14 +52,13 @@ import io.aelf.portkey.internal.model.common.AccountOriginalType
 import io.aelf.portkey.internal.model.google.GoogleAccount
 import io.aelf.portkey.network.connecter.NetworkService
 import io.aelf.portkey.sdk.R
-import io.aelf.portkey.tools.friendly.DynamicWidth
+import io.aelf.portkey.tools.friendly.dynamicWidth
 import io.aelf.portkey.tools.friendly.UseComponentDidMount
 import io.aelf.portkey.tools.friendly.UseComponentWillUnmount
 import io.aelf.portkey.tools.friendly.convertGoogleAccount
 import io.aelf.portkey.tools.timeout.useTimeout
 import io.aelf.portkey.ui.basic.Distance
 import io.aelf.portkey.ui.basic.HugeTitle
-import io.aelf.portkey.ui.basic.Toast
 import io.aelf.portkey.ui.basic.Toast.showToast
 import io.aelf.portkey.ui.button.ButtonConfig
 import io.aelf.portkey.ui.button.HugeButton
@@ -134,7 +133,7 @@ private fun LoginMainBody() {
 private fun GuardianVerifyStatusBar() {
     Row(
         modifier = Modifier
-            .width(DynamicWidth(paddingHorizontal = 20))
+            .width(dynamicWidth(paddingHorizontal = 20))
             .padding(top = 40.dp)
             .height(22.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -292,7 +291,7 @@ private fun GuardianInfoList() {
     BoxWithConstraints(
         modifier = Modifier
             .padding(top = 8.dp, bottom = 68.dp)
-            .width(DynamicWidth(paddingHorizontal = 20))
+            .width(dynamicWidth(paddingHorizontal = 20))
             .wrapContentHeight(Alignment.CenterVertically)
     ) {
         Column(
@@ -422,7 +421,7 @@ private fun CommitButton() {
     val context = LocalContext.current
     Column(
         modifier = Modifier
-            .width(DynamicWidth(paddingHorizontal = 20))
+            .width(dynamicWidth(paddingHorizontal = 20))
             .fillMaxHeight(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Bottom

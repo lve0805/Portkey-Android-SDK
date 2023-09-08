@@ -52,7 +52,7 @@ import io.aelf.portkey.internal.model.common.AccountOriginalType
 import io.aelf.portkey.internal.model.google.GoogleAccount
 import io.aelf.portkey.network.connecter.NetworkService
 import io.aelf.portkey.sdk.R
-import io.aelf.portkey.tools.friendly.DynamicWidth
+import io.aelf.portkey.tools.friendly.dynamicWidth
 import io.aelf.portkey.tools.friendly.convertGoogleAccount
 import io.aelf.portkey.tools.timeout.useTimeout
 import io.aelf.portkey.ui.basic.ErrorMsg
@@ -130,7 +130,7 @@ private fun InputEmailPage() {
             onValueChange = inputCheck,
             modifier = Modifier
                 .padding(top = 40.dp)
-                .width(DynamicWidth(20))
+                .width(dynamicWidth(20))
                 .height(50.dp)
                 .border(width = 1.dp, color = Color(0xFFEDEFF5), shape = RoundedCornerShape(8.dp)),
             shape = RoundedCornerShape(8.dp),

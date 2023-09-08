@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.aelf.portkey.tools.friendly.DynamicWidth
+import io.aelf.portkey.tools.friendly.dynamicWidth
 import io.aelf.portkey.tools.friendly.UseComponentWillUnmount
 import io.aelf.portkey.tools.friendly.UseEffect
 import io.aelf.portkey.tools.friendly.useKeyboardVisibleState
@@ -192,6 +192,6 @@ private fun VerifyBoxPreview() {
     useVerifyCodeInputBox(
         modifier = Modifier
             .height(56.dp)
-            .width(DynamicWidth(paddingHorizontal = 20))
+            .width(dynamicWidth(paddingHorizontal = 20))
     )
 }

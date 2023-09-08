@@ -42,7 +42,7 @@ import io.aelf.portkey.async.PortkeyAsyncCaller
 import io.aelf.portkey.init.InitProcessor
 import io.aelf.portkey.init.SDkInitConfig
 import io.aelf.portkey.sdk.R
-import io.aelf.portkey.tools.friendly.DynamicWidth
+import io.aelf.portkey.tools.friendly.dynamicWidth
 import io.aelf.portkey.tools.friendly.UseComponentDidMount
 import io.aelf.portkey.tools.friendly.UseComponentWillUnmount
 import io.aelf.portkey.tools.friendly.UseEffect
@@ -90,7 +90,7 @@ internal object Loading {
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .padding(vertical = 8.dp)
-                    .width(DynamicWidth(paddingHorizontal = 20)),
+                    .width(dynamicWidth(paddingHorizontal = 20)),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )

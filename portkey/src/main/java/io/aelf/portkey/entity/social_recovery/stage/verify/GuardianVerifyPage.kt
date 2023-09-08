@@ -36,14 +36,16 @@ import io.aelf.portkey.entity.static.guardian_controller.GuardianInfo
 import io.aelf.portkey.entity.static.guardian_controller.OutsideStateEnum
 import io.aelf.portkey.entity.static.verify_box.VerifyCodeInputBoxInterface
 import io.aelf.portkey.entity.static.verify_box.useVerifyCodeInputBox
-import io.aelf.portkey.tools.friendly.DynamicWidth
 import io.aelf.portkey.tools.friendly.UseComponentDidMount
+import io.aelf.portkey.tools.friendly.dynamicWidth
 import io.aelf.portkey.ui.basic.ErrorMsg
 import io.aelf.portkey.ui.basic.HugeTitle
 import io.aelf.portkey.ui.dialog.Dialog
 import io.aelf.portkey.ui.dialog.DialogProps
 import io.aelf.portkey.ui.loading.Loading
 import io.aelf.portkey.ui.rich_text.RichText
+import io.aelf.portkey.ui.rich_text.RichTextDescriber
+import io.aelf.portkey.ui.rich_text.with
 import io.aelf.portkey.utils.log.GLogger
 import io.aelf.utils.AElfException
 import kotlinx.coroutines.CoroutineScope
@@ -78,17 +80,21 @@ internal fun GuardianPage() {
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun RegisterPageBody() {
-    fun decorateIntroductionText(): String {
+    fun decorateIntroductionText(): RichTextDescriber {
         val accountMsg =
             WalletLifecyclePresenter.register?.config?.accountIdentifier
                 ?: WalletLifecyclePresenter.login?.accountIdentifier
                 ?: "your phone/email"
-        return "A 6-digit code " +
-                (if (sent) "was sent" else "will be sent") +
-                " to #" +
-                (accountMsg) +
-                "#.\n " +
-                (if (sent) "Enter it within 10 minutes." else "Click the button below to send it.")
+        return RichTextDescriber(
+            "A 6-digit code " +
+                    "${(if (sent) "was sent" else "will be sent")} to "
+        ) with RichTextDescriber(
+            text = accountMsg,
+            isSpecialText = true
+        ) with RichTextDescriber(
+            text = ".\n " +
+                    (if (sent) "Enter it within 10 minutes." else "Click the button below to send it.")
+        )
     }
 
     val guardianInfo = remember {
@@ -110,7 +116,7 @@ private fun RegisterPageBody() {
         RichText(
             text = decorateIntroductionText(),
             modifier = Modifier
-                .width(DynamicWidth(paddingHorizontal = 20))
+                .width(dynamicWidth(paddingHorizontal = 20))
                 .defaultMinSize(minHeight = 44.dp)
                 .padding(top = 2.dp, bottom = 40.dp)
         )
@@ -123,7 +129,7 @@ private fun RegisterPageBody() {
             },
             modifier = Modifier
                 .height(56.dp)
-                .width(DynamicWidth(paddingHorizontal = 20)),
+                .width(dynamicWidth(paddingHorizontal = 20)),
             size = CODE_LENGTH,
             enable = sent
         )

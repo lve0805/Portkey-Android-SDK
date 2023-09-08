@@ -49,7 +49,7 @@ import io.aelf.portkey.internal.tools.GlobalConfig.StorageTags.TAG_PIN
 import io.aelf.portkey.sdk.R
 import io.aelf.portkey.storage.StorageProvider
 import io.aelf.portkey.tools.biometric.launchBiometricVerify
-import io.aelf.portkey.tools.friendly.DynamicWidth
+import io.aelf.portkey.tools.friendly.dynamicWidth
 import io.aelf.portkey.tools.friendly.UseComponentDidMount
 import io.aelf.portkey.tools.friendly.UseComponentWillUnmount
 import io.aelf.portkey.ui.basic.ErrorMsg
@@ -263,7 +263,7 @@ private fun useBiometric(
 private fun LeaveBiometricVerifyButton() {
     Column(
         modifier = Modifier
-            .width(DynamicWidth(paddingHorizontal = 20))
+            .width(dynamicWidth(paddingHorizontal = 20))
             .fillMaxHeight(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Bottom
