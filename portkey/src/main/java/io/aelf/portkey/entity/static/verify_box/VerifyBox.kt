@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,7 +33,14 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.aelf.portkey.tools.friendly.DynamicWidth
-import io.aelf.portkey.tools.friendly.UseKeyboardVisibleState
+import io.aelf.portkey.tools.friendly.UseComponentWillUnmount
+import io.aelf.portkey.tools.friendly.UseEffect
+import io.aelf.portkey.tools.friendly.useKeyboardVisibleState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 private fun VerifyCodeInputBoxItem(
@@ -87,16 +95,53 @@ internal fun useVerifyCodeInputBox(
     enable: Boolean = true,
     onTextChange: (String) -> Unit = {}
 ): VerifyCodeInputBoxInterface {
+    var shining by remember {
+        mutableStateOf(false)
+    }
     var code by remember {
         mutableStateOf(
             TextFieldValue(text = "", selection = TextRange(Int.MAX_VALUE))
         )
     }
+    var job: Job? by remember {
+        mutableStateOf(null)
+    }
+    var cancelCountDown: () -> Unit = { }
+    val startCountDown: (CoroutineScope) -> Unit = {
+        var active = true
+        shining = true
+        if (job?.isActive == true) {
+            job?.cancel()
+        }
+        job = it.launch(Dispatchers.IO) {
+            while (active) {
+                delay(500)
+                shining = !shining
+            }
+        }
+        cancelCountDown = {
+            shining = false
+            active = false
+            if (job?.isActive == true) {
+                job?.cancel()
+            }
+        }
+    }
     val clearCodeInput: () -> Unit = {
         code = TextFieldValue(text = "", selection = TextRange(Int.MAX_VALUE))
     }
-
-    val keyboardFocused by UseKeyboardVisibleState()
+    val keyboardFocused by useKeyboardVisibleState()
+    val coroutineScope = rememberCoroutineScope()
+    UseEffect(keyboardFocused) {
+        if (keyboardFocused) {
+            startCountDown(coroutineScope)
+        } else {
+            cancelCountDown()
+        }
+    }
+    UseComponentWillUnmount {
+        cancelCountDown()
+    }
     BasicTextField(
         value = code,
         onValueChange = {
@@ -124,7 +169,7 @@ internal fun useVerifyCodeInputBox(
                     for (i in 0 until size) {
                         provideItem(
                             if (code.text.length > i) code.text.substring(i, i + 1) else "",
-                            keyboardFocused && i == code.text.length
+                            keyboardFocused && i == code.text.length && shining
                         )
                     }
                 }

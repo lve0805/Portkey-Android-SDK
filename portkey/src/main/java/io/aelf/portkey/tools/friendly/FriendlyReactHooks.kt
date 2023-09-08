@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,8 +33,8 @@ fun UseEffect(vararg dependency: Any?, callback: () -> Unit) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun UseKeyboardVisibleState(): State<Boolean> {
-    var keyboardVisible = remember {
+fun useKeyboardVisibleState(): State<Boolean> {
+    val keyboardVisible = remember {
         mutableStateOf(false)
     }
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -70,7 +69,7 @@ fun UseComponentWillUnmount(callback: () -> Unit) {
 
 @Composable
 fun UseAndroidBackButtonSettings(callback: () -> Unit) {
-    val callback = remember {
+    val backPressCallback = remember {
         return@remember object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 callback()
@@ -79,16 +78,9 @@ fun UseAndroidBackButtonSettings(callback: () -> Unit) {
     }
     val dispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     DisposableEffect(key1 = Unit, effect = {
-        dispatcher?.addCallback(callback)
+        dispatcher?.addCallback(backPressCallback)
         onDispose {
-            callback.remove()
+            backPressCallback.remove()
         }
     })
-}
-
-@Composable
-fun <T> UseState(initValue: T): MutableState<T> {
-    return remember {
-        mutableStateOf(initValue)
-    }
 }

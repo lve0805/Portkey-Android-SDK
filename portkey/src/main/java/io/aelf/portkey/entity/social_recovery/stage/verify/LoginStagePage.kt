@@ -60,6 +60,7 @@ import io.aelf.portkey.tools.timeout.useTimeout
 import io.aelf.portkey.ui.basic.Distance
 import io.aelf.portkey.ui.basic.HugeTitle
 import io.aelf.portkey.ui.basic.Toast
+import io.aelf.portkey.ui.basic.Toast.showToast
 import io.aelf.portkey.ui.button.ButtonConfig
 import io.aelf.portkey.ui.button.HugeButton
 import io.aelf.portkey.ui.dialog.Dialog
@@ -270,7 +271,6 @@ private fun GuardianInfoList() {
                 buttonClick = {
                     when (info.originalData.type) {
                         AccountOriginalType.Email.name,
-                        AccountOriginalType.Apple.name,
                         AccountOriginalType.Phone.name -> {
                             WalletLifecyclePresenter.activeGuardian =
                                 thisGuardian
@@ -280,6 +280,10 @@ private fun GuardianInfoList() {
                             scope.launch(Dispatchers.IO) {
                                 googleGuardianVerify(scope, thisGuardian, context)
                             }
+                        }
+
+                        AccountOriginalType.Apple.name -> {
+                            // TODO Apple's Guardian
                         }
                     }
                 }
@@ -327,7 +331,7 @@ internal fun continueVerifyWithGoogleAccount(googleAccount: GoogleSignInAccount)
                         )
                     } catch (e: Throwable) {
                         GLogger.e("error when checking google account.", AElfException(e))
-                        Toast.showToast(
+                        showToast(
                             context,
                             "Sorry but the sever was not responding, please try again later."
                         )
@@ -356,6 +360,16 @@ private suspend fun googleGuardianVerify(
             if (shouldLaunchGoogleService) {
                 awaitingGoogleGuardian = guardian
                 launchGoogleLoginService()
+                return@launch
+            } else if (
+                guardian.requireOutsideGoogleAccount()
+                && guardian.originalGuardianInfo.thirdPartyEmail != googleAccount?.email
+            ) {
+                showToast(
+                    context = context,
+                    text = "Please use the same Google account as which the guardian requires to verify."
+                )
+                Loading.hideLoading()
                 return@launch
             }
             val result = if (guardian.requireOutsideGoogleAccount()) {
@@ -392,6 +406,8 @@ private suspend fun googleGuardianVerify(
 }
 
 private suspend fun forceRecomposition() {
+    // Due to Compose's basic design, UI will not change when State object itself changes, until this reference of State changes.
+    // Therefore, we need to tell Compose to recompose the UI by changing the target of those references.
     val login = WalletLifecyclePresenter.login ?: return
     WalletLifecyclePresenter.login = null
     delay(10)
@@ -420,7 +436,7 @@ private fun CommitButton() {
                     }
                 }
             },
-            enable = WalletLifecyclePresenter.login?.isFulfilled ?: false
+            enable = (WalletLifecyclePresenter.login?.isFulfilled ?: false) && !isExpired
         )
     }
 }

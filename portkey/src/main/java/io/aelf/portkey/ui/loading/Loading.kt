@@ -51,9 +51,6 @@ import io.aelf.portkey.ui.basic.ZIndexConfig
 import io.aelf.portkey.ui.basic.wrapperStyle
 import io.aelf.portkey.ui.loading.Loading.loadingState
 import io.aelf.portkey.utils.log.GLogger
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 const val DEFAULT_LOADING_TEXT = "Loading..."
@@ -100,6 +97,11 @@ internal object Loading {
         }
     }
 
+    private fun clearUp() {
+        loadingState.isShow = false
+        loadingState.loadingText = DEFAULT_LOADING_TEXT
+    }
+
     @Composable
     private fun LottieAnimationComponent(animationRes: Int, style: Style, loop: Boolean = true) {
         AndroidView(
@@ -124,16 +126,7 @@ internal object Loading {
     internal fun hideLoading(duration: Long = 0L) {
         PortkeyAsyncCaller.asyncCall {
             Thread.sleep(duration)
-            loadingState.isShow = false
-            loadingState.loadingText = DEFAULT_LOADING_TEXT
-        }
-    }
-
-    internal fun hideLoadingCoroutine(scope: CoroutineScope, duration: Long = 0L) {
-        scope.launch(Dispatchers.IO) {
-            delay(duration)
-            loadingState.isShow = false
-            loadingState.loadingText = DEFAULT_LOADING_TEXT
+            clearUp()
         }
     }
 

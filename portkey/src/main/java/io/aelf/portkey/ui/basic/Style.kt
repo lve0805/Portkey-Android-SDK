@@ -27,14 +27,6 @@ internal val wrapperStyle = Style().apply {
     height = 136.dp
 }
 
-internal fun isValid(num: Dp): Boolean {
-    return num.value > 0
-}
-
-internal fun isValid(str: String?): Boolean {
-    return !str.isNullOrEmpty()
-}
-
 enum class ZIndexConfig(private val z: Float) {
     Loading(100f),
     Dialog(50f),

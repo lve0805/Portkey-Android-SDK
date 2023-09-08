@@ -15,7 +15,7 @@ fun launchBiometricVerify(
         GLogger.e(
             "BiometricVerify failed: If you mean to use biometric, please make sure the context that Compose" +
                     "lives in is a FragmentActivity.\n" +
-                    "It's simple: just make your Activity extends from FragmentActivity instead of other Activity class."
+                    "It's simple: just make your Activity extends from FragmentActivity instead of other Activity classes."
         )
         fail?.let { it() }
         return

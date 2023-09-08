@@ -7,10 +7,11 @@ import androidx.compose.ui.unit.dp
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import io.aelf.portkey.internal.model.google.GoogleAccount
 import io.aelf.portkey.internal.tools.GsonProvider
-
-internal fun toJson(obj: Any): String {
-    return GsonProvider.getGson().toJson(obj)
-}
+import io.aelf.portkey.storage.IStorageBehaviour
+import io.aelf.portkey.storage.StorageProvider
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 internal const val NETWORK_TIMEOUT = 15 * 1000L
 
@@ -28,5 +29,28 @@ internal fun convertGoogleAccount(
         email = googleAccount.email
         idToken = googleAccount.idToken
         accessToken = givenAccountToken
+    }
+}
+
+fun getCurrentStorageHandler(): IStorageBehaviour = StorageProvider.getHandler()
+
+fun IStorageBehaviour.putValueCoroutine(
+    key: String,
+    value: String,
+    scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+) {
+    scope.launch {
+        putValue(key, value)
+    }
+}
+
+fun IStorageBehaviour.getValueCoroutine(
+    key: String,
+    scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
+    callback: (String?) -> Unit
+) {
+    scope.launch {
+        val res = getValue(key)
+        callback(res)
     }
 }

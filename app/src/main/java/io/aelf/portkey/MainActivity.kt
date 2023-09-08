@@ -3,6 +3,7 @@ package io.aelf.portkey
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.text.TextUtils
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -18,6 +19,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -37,29 +40,60 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.fragment.app.FragmentActivity
+import ca.CaContract
+import ca.CaContract.GetHolderInfoInput
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.common.api.ApiException
+import io.aelf.portkey.behaviour.wallet.callCAContractMethod
 import io.aelf.portkey.component.stub.PortkeySDKViewStub
+import io.aelf.portkey.core.entry.Portkey
+import io.aelf.portkey.core.entry.PortkeyTest
 import io.aelf.portkey.entity.social_recovery.SocialRecoveryModalProps
-import io.aelf.portkey.entity.static.Portkey
 import io.aelf.portkey.init.InitProcessor
 import io.aelf.portkey.init.SDkInitConfig
 import io.aelf.portkey.internal.tools.GlobalConfig
 import io.aelf.portkey.network.retrofit.RetrofitProvider
+import io.aelf.portkey.tools.contract.toAElfBytes
+import io.aelf.portkey.tools.contract.toAElfHash
 import io.aelf.portkey.tools.friendly.UseComponentDidMount
+import io.aelf.portkey.tools.friendly.getCurrentStorageHandler
+import io.aelf.portkey.tools.friendly.getValueCoroutine
+import io.aelf.portkey.tools.friendly.putValueCoroutine
 import io.aelf.portkey.ui.basic.Toast
 import io.aelf.portkey.ui.button.ButtonConfig
 import io.aelf.portkey.ui.button.HugeButton
+import io.aelf.portkey.ui.dialog.DialogProps
 import io.aelf.portkey.utils.log.GLogger
+import io.aelf.utils.AElfException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+private const val SELECTED_ENVIRONMENT_TAG = "selected_environment_name"
+
+private var currentEnvironmentUsing = "Test2"
+    set(value) {
+        field = value
+        Portkey.forceLogout()
+        RetrofitProvider.resetOrInitMainRetrofit(
+            when (value) {
+                "MainNet" -> "https://did-portkey.portkey.finance"
+                "TestNet" -> "https://did-portkey-test.portkey.finance"
+                "Test1" -> "https://localtest-applesign.portkey.finance"
+                "Test2" -> "https://localtest-applesign2.portkey.finance"
+                else -> "https://testnet-applesign.portkey.finance"
+            }
+        )
+        getCurrentStorageHandler().apply {
+            putValueCoroutine(SELECTED_ENVIRONMENT_TAG, value)
+        }
+    }
+
+
 @Suppress("DEPRECATION")
 class MainActivity : FragmentActivity() {
-    private var modalOpen by mutableStateOf(false)
     private var googleAuthLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>? = null
     private var googleSignInCallback: (GoogleSignInAccount?) -> Unit = {}
 
@@ -76,6 +110,7 @@ class MainActivity : FragmentActivity() {
         val scope = rememberCoroutineScope()
         UseComponentDidMount {
             initDebug(context)
+            recoverEnvironment()
         }
         fun showToast(msg: String) {
             scope.launch(Dispatchers.Main) {
@@ -94,17 +129,14 @@ class MainActivity : FragmentActivity() {
                 onUserCancel = {
                     GLogger.w("onUserCancel")
                     showToast("onUserCancel")
-                    modalOpen = false
                 },
                 onSuccess = {
                     GLogger.w("onSuccess")
                     showToast("onSuccess")
-                    modalOpen = false
                 },
                 onError = {
                     GLogger.e("onError", it)
                     showToast("onError:${it.message}")
-                    modalOpen = false
                 },
                 onUseGoogleAuthService = {
                     googleSignInCallback = it
@@ -112,48 +144,136 @@ class MainActivity : FragmentActivity() {
                 }
             )
         }
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.LightGray)
-                .zIndex(1F)
-                .padding(top = 50.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(5.dp, Alignment.Top)
+        Box(
+            modifier = Modifier.fillMaxSize()
         ) {
-            HugeButton(
-                config = ButtonConfig().apply {
-                    text = "Call Up Dialog"
-                    onClick = callUp@{
-                        if (!modalOpen) {
+            PortkeySDKViewStub()
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.LightGray)
+                    .zIndex(1F)
+                    .padding(top = 50.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(5.dp, Alignment.Top)
+            ) {
+                HugeButton(
+                    config = ButtonConfig().apply {
+                        text = "Call Up Dialog"
+                        onClick = {
                             Portkey.callUpSocialRecoveryModel(props)
-                            modalOpen = true
                         }
                     }
-                }
-            )
-            HugeButton(
-                config = ButtonConfig().apply {
-                    text = "Clear Wallet"
-                    onClick = logout@{
-                        if (modalOpen) return@logout
-                        Portkey.forceLogout()
-                        showToast("Wallet removed.")
+                )
+                HugeButton(
+                    config = ButtonConfig().apply {
+                        text = "Clear Wallet"
+                        onClick = {
+                            Portkey.forceLogout()
+                            showToast("Wallet removed.")
+                        }
                     }
+                )
+                ServiceEnvironment()
+                remember { listOf(1, 2, 3) }.map {
+                    HugeButton(config = ButtonConfig().apply {
+                        text = "Call CA Contract Method $it"
+                        onClick = {
+                            callContractMethods(it, scope, ::showToast)
+                        }
+                    })
                 }
-            )
-            ServiceEnvironment()
-            HugeButton(
-                config = ButtonConfig().apply {
-                    text = "Goto Guardian Page"
-                    onClick = guardian@{
-                        if (modalOpen) return@guardian
-                        jumpToGuardianActivity()
+                HugeButton(
+                    config = ButtonConfig().apply {
+                        text = "Goto Guardian Page"
+                        onClick = {
+                            jumpToGuardianActivity()
+                        }
                     }
-                }
-            )
+                )
+            }
         }
-        PortkeySDKViewStub()
+    }
+
+    private fun recoverEnvironment() {
+        getCurrentStorageHandler().apply {
+            getValueCoroutine(SELECTED_ENVIRONMENT_TAG) {
+                currentEnvironmentUsing = if (TextUtils.isEmpty(it)) "Test2" else it!!
+            }
+        }
+    }
+
+    private fun callContractMethods(
+        flavour: Int,
+        scope: CoroutineScope,
+        showToast: (String) -> Unit
+    ) {
+        val wallet = Portkey.getWallet()
+        if (wallet == null) {
+            showToast("Wallet is not active.")
+            return
+        }
+        PortkeyTest.showLoadingForTestOnly()
+        scope.launch(Dispatchers.IO) {
+            try {
+                val result = when (flavour) {
+                    1 -> {
+                        wallet.callCAContractMethod(
+                            methodName = "GetVerifierServers",
+                            isViewMethod = true,
+                            parser = {
+                                CaContract.GetVerifierServersOutput.parseFrom(
+                                    it.toAElfBytes()
+                                )
+                            }
+                        )
+                    }
+
+                    2 -> {
+                        val builder = GetHolderInfoInput
+                            .newBuilder()
+                            .setCaHash(wallet.caInfo.caAddress.toAElfHash())
+                        wallet.callCAContractMethod(
+                            methodName = "GetHolderInfo",
+                            isViewMethod = true,
+                            params = builder.build(),
+                            parser = {
+                                CaContract.GetHolderInfoOutput.parseFrom(
+                                    it.toAElfBytes()
+                                )
+                            }
+                        )
+                    }
+
+                    3 -> {
+                        wallet.callCAContractMethod(
+                            methodName = "GetCAServers",
+                            isViewMethod = true,
+                            parser = {
+                                CaContract.GetCAServersOutput.parseFrom(
+                                    it.toAElfBytes()
+                                )
+                            }
+                        )
+                    }
+
+                    else -> {
+                        "unKnown"
+                    }
+                }
+                PortkeyTest.showDialogForTestOnly(
+                    DialogProps().apply {
+                        mainTitle = "Result"
+                        subTitle = (result ?: "the server returned nothing.").toString()
+                        useSingleConfirmButton = true
+                    }
+                )
+            } catch (e: Throwable) {
+                showToast("Failed to call CA method, check the console.")
+                GLogger.e("Failed to call CA method.", AElfException(e))
+            }
+            PortkeyTest.hideLoadingForTestOnly()
+        }
     }
 
     private fun jumpToGuardianActivity() {
@@ -184,32 +304,47 @@ class MainActivity : FragmentActivity() {
             contentAlignment = Alignment.Center
         ) {
             Text(text = "Select Environment", modifier = Modifier.clickable click@{
-                if (modalOpen) return@click
                 expand = !expand
             }, color = Color.White)
             DropdownMenu(
                 expanded = expand,
                 onDismissRequest = { expand = false },
-                modifier = Modifier.width(100.dp)
+                modifier = Modifier
+                    .wrapContentWidth()
+                    .wrapContentHeight()
             ) {
                 data.forEach {
                     DropdownMenuItem(
                         text = {
-                            Text(text = it, modifier = Modifier.padding(start = 10.dp))
+                            Text(
+                                text = it.plus(if (currentEnvironmentUsing == it) "  ✅" else ""),
+                                modifier = Modifier
+                                    .padding(start = 10.dp)
+                                    .wrapContentWidth()
+                            )
                         },
                         onClick = {
                             expand = false
-                            RetrofitProvider.resetOrInitMainRetrofit(
-                                when (it) {
-                                    "MainNet" -> "https://did-portkey.portkey.finance"
-                                    "TestNet" -> "https://did-portkey-test.portkey.finance"
-                                    "Test1" -> "https://localtest-applesign.portkey.finance"
-                                    "Test2" -> "https://localtest-applesign2.portkey.finance"
-                                    else -> "https://testnet-applesign.portkey.finance"
+                            fun execute() {
+                                currentEnvironmentUsing = it
+                                Toast.showToast(
+                                    context,
+                                    "\nInit with:$it .\nWallet is also reset now."
+                                )
+                            }
+                            PortkeyTest.showDialogForTestOnly(
+                                DialogProps().apply {
+                                    mainTitle = "Confirm"
+                                    subTitle =
+                                        "Are you sure to switch to $it ? Your wallet will be erased and have to start over."
+                                    useSingleConfirmButton = false
+                                    positiveCallback = {
+                                        execute()
+                                    }
                                 }
                             )
-                            Toast.showToast(context, "Init with:$it")
-                        })
+                        }
+                    )
                 }
             }
         }

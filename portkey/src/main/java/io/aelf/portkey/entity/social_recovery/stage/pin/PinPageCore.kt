@@ -41,6 +41,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.aelf.portkey.behaviour.entry.EntryBehaviourEntity
+import io.aelf.portkey.behaviour.wallet.PortkeyWallet
+import io.aelf.portkey.behaviour.wallet.WalletStage
 import io.aelf.portkey.core.presenter.WalletLifecyclePresenter
 import io.aelf.portkey.entity.social_recovery.SocialRecoveryModal
 import io.aelf.portkey.internal.tools.GlobalConfig.StorageTags.TAG_PIN
@@ -523,21 +525,40 @@ private fun onFinish(biometric: BiometricPrompt.AuthenticationResult? = null) {
         }
         Loading.showLoading("Creating Wallet...")
         try {
-            val wallet = setPin.lockAndGetWallet(pinValue)
-            Loading.hideLoading()
-            if (wallet != null) {
-                if (biometric != null) {
-                    extraPinValueStorage()
+            var wallet: PortkeyWallet? = null
+            wallet = setPin.lockAndGetWallet(pinValue) {
+                Loading.hideLoading()
+                if (it == WalletStage.READY) {
+                    if (wallet != null) {
+                        if (biometric != null) {
+                            extraPinValueStorage()
+                        }
+                        WalletLifecyclePresenter.wallet = wallet
+                    }
+                    clearUp()
+                    SocialRecoveryModal.onSuccess()
+                } else {
+                    Dialog.show(
+                        DialogProps().apply {
+                            mainTitle = "Network failure"
+                            subTitle =
+                                "It seems that the network is not working properly. Please try again."
+                            positiveText = "Try again"
+                            negativeText = "Cancel"
+                            positiveCallback = {
+                                onFinish(biometric)
+                            }
+                        }
+                    )
                 }
-                WalletLifecyclePresenter.wallet = wallet
-                clearUp()
-                SocialRecoveryModal.onSuccess()
+            }
+            if (wallet != null) {
                 return@launch
             }
         } catch (e: Throwable) {
             GLogger.e("set pin process failed:", AElfException(e))
-            Loading.hideLoading()
         }
+        Loading.hideLoading()
         Dialog.show(
             DialogProps().apply {
                 mainTitle = "Network failure"
@@ -574,8 +595,47 @@ private fun checkPinVerify() {
         clearAndReportErr("incorrect pin")
         return
     }
-    WalletLifecyclePresenter.wallet = unlock.unlockAndBuildWallet(pinValue)
-    SocialRecoveryModal.onSuccess()
+    Loading.showLoading("Unlocking Wallet...")
+    try{
+        var wallet: PortkeyWallet? = null
+        wallet = unlock.unlockAndBuildWallet(pinValue) {
+            Loading.hideLoading()
+            if (it == WalletStage.READY) {
+                WalletLifecyclePresenter.wallet = wallet
+                SocialRecoveryModal.onSuccess()
+            } else {
+                Dialog.show(
+                    DialogProps().apply {
+                        mainTitle = "Network failure"
+                        subTitle =
+                            "It seems that the network is not working properly. Please try again."
+                        positiveText = "Try again"
+                        negativeText = "Cancel"
+                        positiveCallback = {
+                            checkPinVerify()
+                        }
+                    }
+                )
+            }
+        }
+        if(wallet != null){
+            return
+        }
+    }catch (e:Throwable){
+        GLogger.e("check pin verify failed:", AElfException(e))
+    }
+    Loading.hideLoading()
+    Dialog.show(
+        DialogProps().apply {
+            mainTitle = "Network failure"
+            subTitle = "Create wallet failed, please try again."
+            positiveText = "Try again"
+            negativeText = "Cancel"
+            positiveCallback = {
+                checkPinVerify()
+            }
+        }
+    )
 }
 
 private fun checkPinVerifyFromBioPin(pin: String) {
@@ -585,8 +645,47 @@ private fun checkPinVerifyFromBioPin(pin: String) {
         setThisErrorMsg("internal err")
         return
     }
-    WalletLifecyclePresenter.wallet = unlock.unlockAndBuildWallet(pin)
-    SocialRecoveryModal.onSuccess()
+    Loading.showLoading("Unlocking Wallet...")
+    try{
+        var wallet: PortkeyWallet? = null
+        wallet = unlock.unlockAndBuildWallet(pin) {
+            Loading.hideLoading()
+            if (it == WalletStage.READY) {
+                WalletLifecyclePresenter.wallet = wallet
+                SocialRecoveryModal.onSuccess()
+            } else {
+                Dialog.show(
+                    DialogProps().apply {
+                        mainTitle = "Network failure"
+                        subTitle =
+                            "It seems that the network is not working properly. Please try again."
+                        positiveText = "Try again"
+                        negativeText = "Cancel"
+                        positiveCallback = {
+                            checkPinVerifyFromBioPin(pin)
+                        }
+                    }
+                )
+            }
+        }
+        if(wallet != null){
+            return
+        }
+    }catch (e:Throwable){
+        GLogger.e("check pin verify from bio pin failed:", AElfException(e))
+    }
+    Loading.hideLoading()
+    Dialog.show(
+        DialogProps().apply {
+            mainTitle = "Network failure"
+            subTitle = "Create wallet failed, please try again."
+            positiveText = "Try again"
+            negativeText = "Cancel"
+            positiveCallback = {
+                checkPinVerifyFromBioPin(pin)
+            }
+        }
+    )
 }
 
 private fun clearAndReportErrRepeat(

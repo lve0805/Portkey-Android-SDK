@@ -40,10 +40,10 @@ import io.aelf.portkey.internal.model.common.AccountOriginalType
 import io.aelf.portkey.internal.model.guardian.GuardianDTO
 import io.aelf.portkey.sdk.R
 import io.aelf.portkey.tools.friendly.DynamicWidth
-import io.aelf.portkey.ui.basic.Distance
 import io.aelf.portkey.ui.basic.ZIndexConfig
 import io.aelf.portkey.ui.button.ButtonConfig
 import io.aelf.portkey.ui.button.TinyButton
+import org.jetbrains.annotations.Contract
 
 @Composable
 internal fun GuardianController(info: GuardianInfo, modifier: Modifier = Modifier) {
@@ -89,12 +89,13 @@ private fun BoxTag(info: GuardianDTO) {
 
 @Composable
 private fun Content(info: GuardianInfo) {
+    val guardianEntity = info.guardianEntity ?: return
     Box(
         modifier = Modifier
             .fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
-        val guardianDTO = info.guardianEntity!!.originalGuardianInfo
+        val guardianDTO = guardianEntity.originalGuardianInfo
         Row(
             modifier = Modifier
                 .width(DynamicWidth(paddingHorizontal = 31))
@@ -110,7 +111,7 @@ private fun Content(info: GuardianInfo) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icons(guardianDTO)
-                Texts(guardianDTO, info.state)
+                Texts(guardianDTO, info.state, guardianEntity.accountIdentifier)
             }
             Actions(info)
         }
@@ -185,7 +186,7 @@ private fun Icons(info: GuardianDTO) {
 }
 
 @Composable
-private fun Texts(info: GuardianDTO, state: OutsideStateEnum) {
+private fun Texts(info: GuardianDTO, state: OutsideStateEnum, accountIdentifier: String) {
     val guardianName = getGuardianName(info)
     val guardianIdentifier = getGuardianIdentifier(info)
     Column(
@@ -197,7 +198,7 @@ private fun Texts(info: GuardianDTO, state: OutsideStateEnum) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = if (state != OutsideStateEnum.Register) guardianName else guardianIdentifier,
+            text = if (state != OutsideStateEnum.Register) guardianName else accountIdentifier,
             maxLines = if (TextUtils.isEmpty(guardianIdentifier)) 2 else 1,
             fontSize = 14.sp,
             textAlign = TextAlign.Start,
@@ -221,6 +222,7 @@ private fun Texts(info: GuardianDTO, state: OutsideStateEnum) {
     }
 }
 
+@Contract(pure = true)
 private fun getGuardianName(info: GuardianDTO): String {
     return when (info.type) {
         AccountOriginalType.Google.name -> {
@@ -233,11 +235,12 @@ private fun getGuardianName(info: GuardianDTO): String {
         }
 
         else -> {
-            info.guardianIdentifier ?:info.name
+            info.guardianIdentifier ?: info.name
         }
     }
 }
 
+@Contract(pure = true)
 private fun getGuardianIdentifier(info: GuardianDTO): String {
     return when (info.type) {
         AccountOriginalType.Google.name -> {
@@ -359,7 +362,8 @@ private fun GuardianControllerPreview() {
             0,
             { },
             AccountOriginalType.Email,
-            false
+            false,
+            "lve@portkey.finance"
         )
         buttonClick = { }
 //        state = OutsideStateEnum.Expired

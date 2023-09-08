@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -185,6 +186,7 @@ internal object SocialRecoveryModal : ModalController {
                     modifier = Modifier
                         .background(backgroundColor)
                         .zIndex(ZIndexConfig.Modal.getZIndex() + 1)
+                        .pointerInput(Unit) { }
                         .fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Bottom
@@ -253,7 +255,7 @@ internal object SocialRecoveryModal : ModalController {
                         EntryBehaviourEntity.attemptToGetLockedWallet().get()
                 }
             }
-            Loading.hideLoadingCoroutine(scope = this, duration = 100)
+            Loading.hideLoading(duration = 100)
         }
     }
 
