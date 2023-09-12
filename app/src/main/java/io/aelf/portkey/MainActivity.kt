@@ -73,10 +73,15 @@ import kotlinx.coroutines.launch
 
 private const val SELECTED_ENVIRONMENT_TAG = "selected_environment_name"
 
-private var currentEnvironmentUsing = "Test2"
+private var currentEnvironmentUsing = "None"
     set(value) {
+        if (field != "None") {
+            Portkey.forceLogout()
+            getCurrentStorageHandler().apply {
+                putValueCoroutine(SELECTED_ENVIRONMENT_TAG, value)
+            }
+        }
         field = value
-        Portkey.forceLogout()
         RetrofitProvider.resetOrInitMainRetrofit(
             when (value) {
                 "MainNet" -> "https://did-portkey.portkey.finance"
@@ -86,9 +91,6 @@ private var currentEnvironmentUsing = "Test2"
                 else -> "https://testnet-applesign.portkey.finance"
             }
         )
-        getCurrentStorageHandler().apply {
-            putValueCoroutine(SELECTED_ENVIRONMENT_TAG, value)
-        }
     }
 
 
@@ -160,7 +162,11 @@ class MainActivity : FragmentActivity() {
                 HugeButton(
                     config = ButtonConfig().apply {
                         text = "Call Up Dialog"
-                        onClick = {
+                        onClick = callUp@{
+                            if (Portkey.getWallet() != null) {
+                                showDialogWarning("Wallet already exists.")
+                                return@callUp
+                            }
                             Portkey.callUpSocialRecoveryModel(props)
                         }
                     }
@@ -209,8 +215,8 @@ class MainActivity : FragmentActivity() {
         showToast: (String) -> Unit
     ) {
         val wallet = Portkey.getWallet()
-        if (wallet == null) {
-            showToast("Wallet is not active.")
+        if (wallet == null || wallet.caInfo == null) {
+            showDialogWarning()
             return
         }
         PortkeyTest.showLoadingForTestOnly()
@@ -230,13 +236,14 @@ class MainActivity : FragmentActivity() {
                     }
 
                     2 -> {
-                        val builder = GetHolderInfoInput
+                        val input = GetHolderInfoInput
                             .newBuilder()
-                            .setCaHash(wallet.caInfo.caAddress.toAElfHash())
+                            .setCaHash(wallet.caInfo.caHash.toAElfHash(hashAgain = false))
+                            .build()
                         wallet.callCAContractMethod(
                             methodName = "GetHolderInfo",
                             isViewMethod = true,
-                            params = builder.build(),
+                            params = input,
                             parser = {
                                 CaContract.GetHolderInfoOutput.parseFrom(
                                     it.toAElfBytes()
@@ -277,8 +284,24 @@ class MainActivity : FragmentActivity() {
     }
 
     private fun jumpToGuardianActivity() {
+        if (Portkey.getWallet() == null) {
+            showDialogWarning()
+            return
+        }
         val intent = Intent(this, GuardianActivity::class.java)
         startActivity(intent)
+    }
+
+    private fun showDialogWarning(
+        text: String = "Wallet is not active."
+    ) {
+        PortkeyTest.showDialogForTestOnly(
+            DialogProps().apply {
+                mainTitle = "Error"
+                subTitle = text
+                useSingleConfirmButton = true
+            }
+        )
     }
 
     @Composable

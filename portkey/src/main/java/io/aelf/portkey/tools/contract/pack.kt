@@ -7,10 +7,11 @@ import io.aelf.utils.Sha256
 
 /**
  * Convert a String to AElf's Hash.
+ * @param hashAgain If the string is already a hash, set this to false.(Default true)
  */
-fun String.toAElfHash(): Hash {
+fun String.toAElfHash(hashAgain: Boolean = true): Hash {
     return Hash.newBuilder().setValue(
-        ByteString.copyFrom(Sha256.getBytesSha256(this))
+        ByteString.copyFrom(if (hashAgain) Sha256.getBytesSha256(this) else this.toByteArray())
     ).build()
 }
 

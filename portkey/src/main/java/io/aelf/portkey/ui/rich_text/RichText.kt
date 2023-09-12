@@ -95,7 +95,7 @@ internal fun RichTextClickable(
 ) {
     val annotatedString = buildAnnotatedString {
         text.forEach { item ->
-            val contentsTag=item.tag != "None"
+            val contentsTag = item.tag != "None"
             withStyle(style = if (contentsTag) specialTextStyle else normalTextStyle) {
                 if (contentsTag) {
                     pushStringAnnotation("tag", item.tag)
@@ -167,7 +167,8 @@ internal infix fun RichTextDescriber.with(another: RichTextDescriber): RichTextD
 private fun RichTextPreview() {
     Column(
         modifier = Modifier.padding(top = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp, alignment = Alignment.Top)
+        verticalArrangement = Arrangement.spacedBy(10.dp, alignment = Alignment.Top),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         RichText(
             text = "Howdy #Chara#, have a good day ! =)\n Welcome #Frisk#, have a good day ! -_-",

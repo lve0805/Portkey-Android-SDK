@@ -259,7 +259,7 @@ private suspend fun authCheck(
                             } else {
                                 // Google account registration
                                 scope.launch(Dispatchers.IO) {
-                                    val result = it.guardian.verifyVerificationCode("FAKE")
+                                    val result = it.guardian.verifyVerificationCodeWithGoogle()
                                     if (result) {
                                         WalletLifecyclePresenter.setPin = it.afterVerified()
                                         leavesEntryPage()
