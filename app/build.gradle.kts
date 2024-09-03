@@ -102,39 +102,24 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation(project(mapOf("path" to ":portkey")))
-    implementation("com.google.android.gms:play-services-auth:20.6.0")
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2023.03.00"))
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
-    debugImplementation("androidx.compose.ui:ui-tooling")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("com.google.android.material:material:1.9.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation(platform("com.google.firebase:firebase-bom:32.2.2"))
-    implementation("androidx.biometric:biometric:1.2.0-alpha05")
 
-
+    //Portkey's core Java SDK
     implementation("io.aelf:portkey-java-sdk:0.0.7-SNAPSHOT") {
         isChanging = true
+        // Portkey's Java SDK uses FastKV dependency with the same name as the one used by the Android app, so it needs to be excluded.
         exclude("io.github.billywei01")
-        exclude("org.bouncycastle")
-        exclude("org.realityforge.org.jetbrains.annotations")
     }
-    // https://mvnrepository.com/artifact/io.github.billywei01/fastkv
-    implementation("io.github.billywei01:fastkv:2.1.3")
-    implementation("com.jraska:console:1.2.0")
-    implementation("com.afollestad.material-dialogs:bottomsheets:3.3.0")
-    implementation("com.jraska:console-timber-tree:1.2.0")
-    //dependency for the reCAPTCHA (safetynet)
-    implementation("com.google.android.gms:play-services-safetynet:18.0.1")
-    implementation("com.afollestad.material-dialogs:input:3.3.0")
-
 
     testImplementation("junit:junit:4.13.2")
+    debugImplementation("androidx.compose.ui:ui-tooling")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation(platform("androidx.compose:compose-bom:2023.03.00"))
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-
-    // Solve the conflict problem... LOL
-    implementation("com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava")
-
 }

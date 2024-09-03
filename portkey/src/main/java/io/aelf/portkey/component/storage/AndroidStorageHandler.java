@@ -21,7 +21,7 @@ public class AndroidStorageHandler implements IStorageBehaviour {
     private final FastKV kvProvider;
 
     public AndroidStorageHandler(Context context) {
-        this(context, null, null);
+        this(context, null, PortkeyDefaultCipher.INSTANCE);
     }
 
     public AndroidStorageHandler(Context context, @Nullable String bucketName, @Nullable FastCipher cipher) {

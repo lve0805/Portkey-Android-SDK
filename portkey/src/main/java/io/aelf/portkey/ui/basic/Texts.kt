@@ -14,7 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.aelf.portkey.tools.friendly.DynamicWidth
+import io.aelf.portkey.tools.friendly.dynamicWidth
 
 @Composable
 internal fun HugeTitle(text: String) {
@@ -39,7 +39,7 @@ internal fun ErrorMsg(
 ) {
     Row(
         modifier = Modifier
-            .width(DynamicWidth(20)),
+            .width(dynamicWidth(20)),
         horizontalArrangement = if (alignToCenter) Arrangement.Center else Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically
     ) {

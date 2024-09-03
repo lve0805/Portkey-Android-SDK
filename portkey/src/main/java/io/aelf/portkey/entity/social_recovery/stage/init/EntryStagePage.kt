@@ -52,7 +52,8 @@ import io.aelf.portkey.internal.model.common.AccountOriginalType
 import io.aelf.portkey.internal.model.google.GoogleAccount
 import io.aelf.portkey.network.connecter.NetworkService
 import io.aelf.portkey.sdk.R
-import io.aelf.portkey.tools.friendly.DynamicWidth
+import io.aelf.portkey.tools.friendly.dynamicWidth
+import io.aelf.portkey.tools.friendly.convertGoogleAccount
 import io.aelf.portkey.tools.timeout.useTimeout
 import io.aelf.portkey.ui.basic.ErrorMsg
 import io.aelf.portkey.ui.basic.HugeTitle
@@ -129,7 +130,7 @@ private fun InputEmailPage() {
             onValueChange = inputCheck,
             modifier = Modifier
                 .padding(top = 40.dp)
-                .width(DynamicWidth(20))
+                .width(dynamicWidth(20))
                 .height(50.dp)
                 .border(width = 1.dp, color = Color(0xFFEDEFF5), shape = RoundedCornerShape(8.dp)),
             shape = RoundedCornerShape(8.dp),
@@ -191,7 +192,7 @@ private suspend fun authCheck(
 ) {
     Loading.showLoading("Checking on-chain data...")
     val checkDeferred = scope.launch(Dispatchers.IO) {
-        var entry: CheckedEntry?
+        val entry: CheckedEntry?
         try {
             entry =
                 EntryBehaviourEntity.attemptAccountCheck(
@@ -258,7 +259,7 @@ private suspend fun authCheck(
                             } else {
                                 // Google account registration
                                 scope.launch(Dispatchers.IO) {
-                                    val result = it.guardian.verifyVerificationCode("FAKE")
+                                    val result = it.guardian.verifyVerificationCodeWithGoogle()
                                     if (result) {
                                         WalletLifecyclePresenter.setPin = it.afterVerified()
                                         leavesEntryPage()
@@ -340,7 +341,8 @@ private fun LoginPathSelector() {
         }, icon = IconConfig().apply {
             iconResId = R.drawable.google_icon
             tintColor = Color.White
-        })
+        }
+        )
         Divider()
         HugeButton(config = ButtonConfig().apply {
             text = "Login with Email"
@@ -355,13 +357,13 @@ private fun LoginPathSelector() {
     }
 }
 
-internal fun continueWithGoogleToken(googleAccount: GoogleSignInAccount) {
+internal fun continueEntryWithGoogleToken(googleAccount: GoogleSignInAccount) {
     entryPageHandler?.let {
         it(
             { token, scope, context ->
                 run {
                     scope.launch(Dispatchers.IO) {
-                        var accessToken: String?
+                        val accessToken: String?
                         try {
                             accessToken = NetworkService.getInstance()
                                 .getGoogleAuthResult(googleAccount.serverAuthCode ?: "")
@@ -386,18 +388,6 @@ internal fun continueWithGoogleToken(googleAccount: GoogleSignInAccount) {
                 }
             }, googleAccount.id ?: ""
         )
-    }
-}
-
-private fun convertGoogleAccount(
-    googleAccount: GoogleSignInAccount,
-    givenAccountToken: String
-): GoogleAccount {
-    return GoogleAccount().apply {
-        id = googleAccount.id
-        email = googleAccount.email
-        idToken = googleAccount.idToken
-        accessToken = givenAccountToken
     }
 }
 

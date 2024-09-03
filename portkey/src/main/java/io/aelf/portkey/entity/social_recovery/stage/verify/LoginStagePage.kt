@@ -40,20 +40,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import io.aelf.portkey.behaviour.guardian.GuardianBehaviourEntity
 import io.aelf.portkey.behaviour.login.LoginBehaviourEntity
 import io.aelf.portkey.core.presenter.WalletLifecyclePresenter
+import io.aelf.portkey.entity.social_recovery.SocialRecoveryModal
 import io.aelf.portkey.entity.static.guardian_controller.GuardianController
 import io.aelf.portkey.entity.static.guardian_controller.GuardianInfo
 import io.aelf.portkey.entity.static.guardian_controller.OutsideStateEnum
 import io.aelf.portkey.internal.model.common.AccountOriginalType
+import io.aelf.portkey.internal.model.google.GoogleAccount
+import io.aelf.portkey.network.connecter.NetworkService
 import io.aelf.portkey.sdk.R
-import io.aelf.portkey.tools.friendly.DynamicWidth
+import io.aelf.portkey.tools.friendly.dynamicWidth
 import io.aelf.portkey.tools.friendly.UseComponentDidMount
 import io.aelf.portkey.tools.friendly.UseComponentWillUnmount
+import io.aelf.portkey.tools.friendly.convertGoogleAccount
 import io.aelf.portkey.tools.timeout.useTimeout
 import io.aelf.portkey.ui.basic.Distance
 import io.aelf.portkey.ui.basic.HugeTitle
+import io.aelf.portkey.ui.basic.Toast.showToast
 import io.aelf.portkey.ui.button.ButtonConfig
 import io.aelf.portkey.ui.button.HugeButton
 import io.aelf.portkey.ui.dialog.Dialog
@@ -61,6 +67,7 @@ import io.aelf.portkey.ui.dialog.DialogProps
 import io.aelf.portkey.ui.loading.Loading
 import io.aelf.portkey.ui.rich_text.RichText
 import io.aelf.portkey.utils.log.GLogger
+import io.aelf.utils.AElfException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -69,13 +76,20 @@ import kotlinx.coroutines.launch
 
 private var isExpired by mutableStateOf(false)
 private var setExpiredJob: Job? = null
+private var loginPageHandler: (((scope: CoroutineScope, context: Context) -> Unit) -> Unit)? = null
+private var awaitingGoogleGuardian: GuardianBehaviourEntity? = null
 
 @Composable
 internal fun LoginStagePage() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     if (WalletLifecyclePresenter.activeGuardian != null) {
         GuardianPage()
     } else {
         LoginMainBody()
+    }
+    loginPageHandler = {
+        it(scope, context)
     }
     UseComponentWillUnmount {
         cleanUp()
@@ -119,7 +133,7 @@ private fun LoginMainBody() {
 private fun GuardianVerifyStatusBar() {
     Row(
         modifier = Modifier
-            .width(DynamicWidth(paddingHorizontal = 20))
+            .width(dynamicWidth(paddingHorizontal = 20))
             .padding(top = 40.dp)
             .height(22.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -132,10 +146,11 @@ private fun GuardianVerifyStatusBar() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            Text(text = "Guardians' Approval",
+            Text(
+                text = "Guardians' Approval",
                 fontSize = 14.sp,
                 lineHeight = 22.sp,
-                color= Color(0xFF8F949C),
+                color = Color(0xFF8F949C),
                 fontWeight = FontWeight(400)
             )
             Distance(width = 4)
@@ -255,7 +270,6 @@ private fun GuardianInfoList() {
                 buttonClick = {
                     when (info.originalData.type) {
                         AccountOriginalType.Email.name,
-                        AccountOriginalType.Apple.name,
                         AccountOriginalType.Phone.name -> {
                             WalletLifecyclePresenter.activeGuardian =
                                 thisGuardian
@@ -266,6 +280,10 @@ private fun GuardianInfoList() {
                                 googleGuardianVerify(scope, thisGuardian, context)
                             }
                         }
+
+                        AccountOriginalType.Apple.name -> {
+                            // TODO Apple's Guardian
+                        }
                     }
                 }
             }
@@ -273,7 +291,7 @@ private fun GuardianInfoList() {
     BoxWithConstraints(
         modifier = Modifier
             .padding(top = 8.dp, bottom = 68.dp)
-            .width(DynamicWidth(paddingHorizontal = 20))
+            .width(dynamicWidth(paddingHorizontal = 20))
             .wrapContentHeight(Alignment.CenterVertically)
     ) {
         Column(
@@ -290,16 +308,74 @@ private fun GuardianInfoList() {
     }
 }
 
+private fun launchGoogleLoginService(
+) {
+    SocialRecoveryModal.checkGoogleToken()
+}
+
+internal fun continueVerifyWithGoogleAccount(googleAccount: GoogleSignInAccount) {
+    loginPageHandler?.let {
+        it { scope, context ->
+            run {
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        val accessToken = NetworkService.getInstance()
+                            .getGoogleAuthResult(googleAccount.serverAuthCode ?: "")
+                            .access_token
+                        googleGuardianVerify(
+                            scope,
+                            awaitingGoogleGuardian,
+                            context,
+                            convertGoogleAccount(googleAccount, accessToken)
+                        )
+                    } catch (e: Throwable) {
+                        GLogger.e("error when checking google account.", AElfException(e))
+                        showToast(
+                            context,
+                            "Sorry but the sever was not responding, please try again later."
+                        )
+                        Loading.hideLoading()
+                        return@launch
+                    }
+                }
+            }
+        }
+    }
+}
+
 private suspend fun googleGuardianVerify(
     scope: CoroutineScope,
-    guardian: GuardianBehaviourEntity,
-    context: Context
+    guardian: GuardianBehaviourEntity?,
+    context: Context,
+    googleAccount: GoogleAccount? = null
 ) {
+    if (guardian == null) return
     Loading.showLoading("Verifying...")
     val job = scope.launch(Dispatchers.IO) {
         // google's guardian
         try {
-            val result = guardian.verifyVerificationCode("FAKE")
+            val shouldLaunchGoogleService =
+                guardian.requireOutsideGoogleAccount() && googleAccount == null
+            if (shouldLaunchGoogleService) {
+                awaitingGoogleGuardian = guardian
+                launchGoogleLoginService()
+                return@launch
+            } else if (
+                guardian.requireOutsideGoogleAccount()
+                && guardian.originalGuardianInfo.thirdPartyEmail != googleAccount?.email
+            ) {
+                showToast(
+                    context = context,
+                    text = "Please use the same Google account as which the guardian requires to verify."
+                )
+                Loading.hideLoading()
+                return@launch
+            }
+            val result = if (guardian.requireOutsideGoogleAccount()) {
+                guardian.verifyVerificationCodeWithGoogle(googleAccount!!)
+            } else {
+                guardian.verifyVerificationCodeWithGoogle()
+            }
             if (result) {
                 Loading.hideLoading()
                 forceRecomposition()
@@ -307,7 +383,6 @@ private suspend fun googleGuardianVerify(
             }
         } catch (e: Throwable) {
             GLogger.e("verifyVerificationCode error:${e.message}")
-
         }
         Dialog.show(DialogProps().apply {
             mainTitle = "Network failure"
@@ -330,6 +405,8 @@ private suspend fun googleGuardianVerify(
 }
 
 private suspend fun forceRecomposition() {
+    // Due to Compose's basic design, UI will not change when State object itself changes, until this reference of State changes.
+    // Therefore, we need to tell Compose to recompose the UI by changing the target of those references.
     val login = WalletLifecyclePresenter.login ?: return
     WalletLifecyclePresenter.login = null
     delay(10)
@@ -344,7 +421,7 @@ private fun CommitButton() {
     val context = LocalContext.current
     Column(
         modifier = Modifier
-            .width(DynamicWidth(paddingHorizontal = 20))
+            .width(dynamicWidth(paddingHorizontal = 20))
             .fillMaxHeight(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Bottom
@@ -358,7 +435,7 @@ private fun CommitButton() {
                     }
                 }
             },
-            enable = WalletLifecyclePresenter.login?.isFulfilled ?: false
+            enable = (WalletLifecyclePresenter.login?.isFulfilled ?: false) && !isExpired
         )
     }
 }

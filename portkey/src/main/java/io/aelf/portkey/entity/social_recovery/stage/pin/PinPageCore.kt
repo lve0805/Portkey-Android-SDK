@@ -41,13 +41,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.aelf.portkey.behaviour.entry.EntryBehaviourEntity
+import io.aelf.portkey.behaviour.wallet.PortkeyWallet
+import io.aelf.portkey.behaviour.wallet.WalletStage
 import io.aelf.portkey.core.presenter.WalletLifecyclePresenter
 import io.aelf.portkey.entity.social_recovery.SocialRecoveryModal
 import io.aelf.portkey.internal.tools.GlobalConfig.StorageTags.TAG_PIN
 import io.aelf.portkey.sdk.R
 import io.aelf.portkey.storage.StorageProvider
 import io.aelf.portkey.tools.biometric.launchBiometricVerify
-import io.aelf.portkey.tools.friendly.DynamicWidth
+import io.aelf.portkey.tools.friendly.dynamicWidth
 import io.aelf.portkey.tools.friendly.UseComponentDidMount
 import io.aelf.portkey.tools.friendly.UseComponentWillUnmount
 import io.aelf.portkey.ui.basic.ErrorMsg
@@ -78,23 +80,31 @@ private var pinValue by mutableStateOf("")
 private const val CONTROL_DELETE = "^"
 private const val CONTROL_BIOMETRIC = "&"
 
+private val itemControlList = listOf(
+    "123",
+    "456",
+    "789",
+    CONTROL_BIOMETRIC + "0" + CONTROL_DELETE
+)
+
+
 @Synchronized
-fun setErrorMsgs(msg: String) {
+fun setThisErrorMsg(msg: String) {
     errorMsg = msg
 }
 
 @Synchronized
-fun setPinValues(value: String) {
+fun setThisPinValue(value: String) {
     pinValue = value
 }
 
 @Synchronized
-fun setRepeatPinValues(value: String) {
+fun setThisRepeatPinValue(value: String) {
     repeatPinValue = value
 }
 
 @Synchronized
-fun setPinsValueByAppends(value: String, context: Context) {
+fun setPinsValueByAppend(value: String, context: Context) {
     if (repeat) {
         if (repeatPinValue.length >= PIN_LENGTH) {
             return
@@ -112,7 +122,7 @@ fun setPinsValueByAppends(value: String, context: Context) {
 
 @Synchronized
 fun rmCharFromLast() {
-    setErrorMsgs("")
+    setThisErrorMsg("")
     if (repeat) {
         if (repeatPinValue.isNotEmpty()) {
             repeatPinValue = repeatPinValue.substring(0, repeatPinValue.length - 1)
@@ -139,8 +149,8 @@ internal fun PinPagePresenter(controlType: PinPageType) {
     val context = LocalContext.current
 
     UseComponentWillUnmount {
-        setPinValues("")
-        setErrorMsgs("")
+        setThisPinValue("")
+        setThisErrorMsg("")
         clearUp()
     }
     if (!verifyBiometric) {
@@ -216,7 +226,7 @@ internal fun PinPagePresenter(controlType: PinPageType) {
 
 @Composable
 private fun PinInput() {
-    listOf("123", "456", "789", CONTROL_BIOMETRIC + "0" + CONTROL_DELETE).map {
+    itemControlList.map {
         PinInputLine(
             controlValue = it,
         )
@@ -233,7 +243,7 @@ private fun useBiometric(
                 if (type == PinPageType.VERIFY) {
                     val extraPinValue = getExtraPinValue()
                     if (TextUtils.isEmpty(extraPinValue)) {
-                        setErrorMsgs("biometric verify failed, please try again")
+                        setThisErrorMsg("biometric verify failed, please try again")
                         return@success
                     } else {
                         checkPinVerifyFromBioPin(extraPinValue)
@@ -253,7 +263,7 @@ private fun useBiometric(
 private fun LeaveBiometricVerifyButton() {
     Column(
         modifier = Modifier
-            .width(DynamicWidth(paddingHorizontal = 20))
+            .width(dynamicWidth(paddingHorizontal = 20))
             .fillMaxHeight(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Bottom
@@ -267,7 +277,7 @@ private fun LeaveBiometricVerifyButton() {
                 }
                 bgColor = Color.White
                 textColor = Color.Black
-                borderWidth=1.dp
+                borderWidth = 1.dp
             },
         )
     }
@@ -306,7 +316,7 @@ private fun PinInputItem(
 
     fun handleClick() {
         if (regex0To9.matches(controlValue)) {
-            setPinsValueByAppends(controlValue, context)
+            setPinsValueByAppend(controlValue, context)
         } else if (CONTROL_DELETE == controlValue) {
             rmCharFromLast()
         } else if (CONTROL_BIOMETRIC == controlValue) {
@@ -461,7 +471,7 @@ private fun handlePinValue(
     scope: CoroutineScope,
     context: Context
 ) {
-    setErrorMsgs("")
+    setThisErrorMsg("")
     if (repeat) {
         if (repeatPinValue.length != PIN_LENGTH) {
             return
@@ -491,7 +501,7 @@ private fun checkPinCreate(context: Context) {
     val setPin = WalletLifecyclePresenter.setPin ?: return
     if (repeat) {
         if (repeatPinValue != pinValue) {
-            clearAndReportErrRepeat("pin not match")
+            clearAndReportErrRepeat()
             return
         }
     } else {
@@ -515,21 +525,40 @@ private fun onFinish(biometric: BiometricPrompt.AuthenticationResult? = null) {
         }
         Loading.showLoading("Creating Wallet...")
         try {
-            val wallet = setPin.lockAndGetWallet(pinValue)
-            Loading.hideLoading()
-            if (wallet != null) {
-                if (biometric != null) {
-                    extraPinValueStorage()
+            var wallet: PortkeyWallet? = null
+            wallet = setPin.lockAndGetWallet(pinValue) {
+                Loading.hideLoading()
+                if (it == WalletStage.READY) {
+                    if (wallet != null) {
+                        if (biometric != null) {
+                            extraPinValueStorage()
+                        }
+                        WalletLifecyclePresenter.wallet = wallet
+                    }
+                    clearUp()
+                    SocialRecoveryModal.onSuccess()
+                } else {
+                    Dialog.show(
+                        DialogProps().apply {
+                            mainTitle = "Network failure"
+                            subTitle =
+                                "It seems that the network is not working properly. Please try again."
+                            positiveText = "Try again"
+                            negativeText = "Cancel"
+                            positiveCallback = {
+                                onFinish(biometric)
+                            }
+                        }
+                    )
                 }
-                WalletLifecyclePresenter.wallet = wallet
-                clearUp()
-                SocialRecoveryModal.onSuccess()
+            }
+            if (wallet != null) {
                 return@launch
             }
         } catch (e: Throwable) {
             GLogger.e("set pin process failed:", AElfException(e))
-            Loading.hideLoading()
         }
+        Loading.hideLoading()
         Dialog.show(
             DialogProps().apply {
                 mainTitle = "Network failure"
@@ -566,32 +595,110 @@ private fun checkPinVerify() {
         clearAndReportErr("incorrect pin")
         return
     }
-    WalletLifecyclePresenter.wallet = unlock.unlockAndBuildWallet(pinValue)
-    SocialRecoveryModal.onSuccess()
+    Loading.showLoading("Unlocking Wallet...")
+    try{
+        var wallet: PortkeyWallet? = null
+        wallet = unlock.unlockAndBuildWallet(pinValue) {
+            Loading.hideLoading()
+            if (it == WalletStage.READY) {
+                WalletLifecyclePresenter.wallet = wallet
+                SocialRecoveryModal.onSuccess()
+            } else {
+                Dialog.show(
+                    DialogProps().apply {
+                        mainTitle = "Network failure"
+                        subTitle =
+                            "It seems that the network is not working properly. Please try again."
+                        positiveText = "Try again"
+                        negativeText = "Cancel"
+                        positiveCallback = {
+                            checkPinVerify()
+                        }
+                    }
+                )
+            }
+        }
+        if(wallet != null){
+            return
+        }
+    }catch (e:Throwable){
+        GLogger.e("check pin verify failed:", AElfException(e))
+    }
+    Loading.hideLoading()
+    Dialog.show(
+        DialogProps().apply {
+            mainTitle = "Network failure"
+            subTitle = "Create wallet failed, please try again."
+            positiveText = "Try again"
+            negativeText = "Cancel"
+            positiveCallback = {
+                checkPinVerify()
+            }
+        }
+    )
 }
 
 private fun checkPinVerifyFromBioPin(pin: String) {
     val unlock = WalletLifecyclePresenter.unlock ?: return
     val result = unlock.checkPin(pin)
     if (!result) {
-        setErrorMsgs("internal err")
+        setThisErrorMsg("internal err")
         return
     }
-    WalletLifecyclePresenter.wallet = unlock.unlockAndBuildWallet(pin)
-    SocialRecoveryModal.onSuccess()
+    Loading.showLoading("Unlocking Wallet...")
+    try{
+        var wallet: PortkeyWallet? = null
+        wallet = unlock.unlockAndBuildWallet(pin) {
+            Loading.hideLoading()
+            if (it == WalletStage.READY) {
+                WalletLifecyclePresenter.wallet = wallet
+                SocialRecoveryModal.onSuccess()
+            } else {
+                Dialog.show(
+                    DialogProps().apply {
+                        mainTitle = "Network failure"
+                        subTitle =
+                            "It seems that the network is not working properly. Please try again."
+                        positiveText = "Try again"
+                        negativeText = "Cancel"
+                        positiveCallback = {
+                            checkPinVerifyFromBioPin(pin)
+                        }
+                    }
+                )
+            }
+        }
+        if(wallet != null){
+            return
+        }
+    }catch (e:Throwable){
+        GLogger.e("check pin verify from bio pin failed:", AElfException(e))
+    }
+    Loading.hideLoading()
+    Dialog.show(
+        DialogProps().apply {
+            mainTitle = "Network failure"
+            subTitle = "Create wallet failed, please try again."
+            positiveText = "Try again"
+            negativeText = "Cancel"
+            positiveCallback = {
+                checkPinVerifyFromBioPin(pin)
+            }
+        }
+    )
 }
 
 private fun clearAndReportErrRepeat(
-    errMsg: String
+    errMsg: String = "pin not match"
 ) {
-    setRepeatPinValues("")
-    setErrorMsgs(errMsg)
+    setThisRepeatPinValue("")
+    setThisErrorMsg(errMsg)
     return
 }
 
 private fun clearAndReportErr(errMsg: String) {
-    setPinValues("")
-    setErrorMsgs(errMsg)
+    setThisPinValue("")
+    setThisErrorMsg(errMsg)
     return
 }
 

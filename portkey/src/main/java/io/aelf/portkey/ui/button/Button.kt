@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import io.aelf.portkey.component.global.NullableTools.dpOrDefault
 import io.aelf.portkey.sdk.R
-import io.aelf.portkey.tools.friendly.DynamicWidth
+import io.aelf.portkey.tools.friendly.dynamicWidth
 import io.aelf.portkey.ui.basic.ZIndexConfig
 
 @Composable
@@ -46,7 +46,7 @@ fun HugeButton(
     Box(
         modifier = Modifier
             .height(50.dp)
-            .width(dpOrDefault(DynamicWidth(20), 320.dp))
+            .width(dpOrDefault(dynamicWidth(20), 320.dp))
     ) {
         if (icon != null && icon.iconResId != 0) {
             Row(
@@ -76,7 +76,7 @@ fun HugeButton(
         }
         Button(config.apply {
             height = 50.dp
-            width = dpOrDefault(DynamicWidth(20), 320.dp)
+            width = dpOrDefault(dynamicWidth(20), 320.dp)
         }, enable)
     }
 }

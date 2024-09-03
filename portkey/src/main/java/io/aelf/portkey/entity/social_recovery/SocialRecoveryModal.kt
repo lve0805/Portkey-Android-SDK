@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -37,15 +38,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import io.aelf.portkey.behaviour.entry.EntryBehaviourEntity
+import io.aelf.portkey.behaviour.wallet.PortkeyWallet
 import io.aelf.portkey.core.presenter.WalletLifecyclePresenter
 import io.aelf.portkey.core.stage.social_recovery.SocialRecoveryStageEnum
 import io.aelf.portkey.debug.initDebug
 import io.aelf.portkey.entity.social_recovery.stage.init.EntryPage
-import io.aelf.portkey.entity.social_recovery.stage.init.continueWithGoogleToken
+import io.aelf.portkey.entity.social_recovery.stage.init.continueEntryWithGoogleToken
 import io.aelf.portkey.entity.social_recovery.stage.pin.SetPinStagePage
 import io.aelf.portkey.entity.social_recovery.stage.pin.UnlockStagePage
 import io.aelf.portkey.entity.social_recovery.stage.verify.LoginStagePage
 import io.aelf.portkey.entity.social_recovery.stage.verify.RegisterPage
+import io.aelf.portkey.entity.social_recovery.stage.verify.continueVerifyWithGoogleAccount
 import io.aelf.portkey.entity.static.footage.PortkeyFootage
 import io.aelf.portkey.sdk.R
 import io.aelf.portkey.tools.friendly.UseAndroidBackButtonSettings
@@ -70,13 +73,14 @@ internal object SocialRecoveryModal : ModalController {
     private var isShow by mutableStateOf(false)
     private const val heightPercent = 0.90f
     private var backFunction: (() -> Unit)? by mutableStateOf(null)
-    private var modalProps: SocialRecoveryModalProps = SocialRecoveryModalProps()
+    private var modalProps: SocialRecoveryModalProps =
+        SocialRecoveryModalProps(onUseGoogleAuthService = {})
 
     internal fun callUpModal(props: SocialRecoveryModalProps) {
         this.modalProps = props
         if (WalletLifecyclePresenter.wallet != null) {
             GLogger.w("Already login")
-            props.onError?.let { it(AElfException(ResultCode.INTERNAL_ERROR, "Already login")) }
+            props.onError(AElfException(ResultCode.INTERNAL_ERROR, "Already login"))
             return
         }
         isShow = true
@@ -94,21 +98,27 @@ internal object SocialRecoveryModal : ModalController {
                     checkGoogleToken()
                 }
             })
-        } else {
-            continueWithGoogleToken(googleAccount)
+        } else if (WalletLifecyclePresenter.stageEnum == SocialRecoveryStageEnum.INIT) {
+            continueEntryWithGoogleToken(googleAccount)
+        } else if (WalletLifecyclePresenter.stageEnum == SocialRecoveryStageEnum.READY_TO_LOGIN) {
+            continueVerifyWithGoogleAccount(googleAccount)
         }
     }
 
 
     internal fun onSuccess() {
+        val wallet = WalletLifecyclePresenter.wallet ?: return
         isShow = false
         WalletLifecyclePresenter.reset(saveWallet = true)
-        modalProps.onSuccess?.let { it() }
+        modalProps.onSuccess(wallet)
     }
 
     internal fun checkGoogleToken() {
+        val onUseGoogleAuthService = modalProps.onUseGoogleAuthService
         Loading.showLoading("Checking Google Account...")
-        modalProps.onUseGoogleAuthService?.let { it() }
+        onUseGoogleAuthService {
+            sendGoogleToken(it)
+        }
     }
 
     override fun closeModal() {
@@ -118,7 +128,7 @@ internal object SocialRecoveryModal : ModalController {
             positiveCallback = {
                 isShow = false
                 WalletLifecyclePresenter.reset()
-                modalProps.onUserCancel?.let { it() }
+                modalProps.onUserCancel()
             }
         })
     }
@@ -143,12 +153,6 @@ internal object SocialRecoveryModal : ModalController {
                 WalletLifecyclePresenter.activeGuardian = null
             }
         })
-    }
-
-    internal fun forceCloseModal(exception: AElfException) {
-        isShow = false
-        WalletLifecyclePresenter.reset()
-        modalProps.onError?.let { it(exception) }
     }
 
     @Composable
@@ -181,7 +185,8 @@ internal object SocialRecoveryModal : ModalController {
                 Column(
                     modifier = Modifier
                         .background(backgroundColor)
-                        .zIndex(ZIndexConfig.Modal.getZIndex()+1)
+                        .zIndex(ZIndexConfig.Modal.getZIndex() + 1)
+                        .pointerInput(Unit) { }
                         .fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Bottom
@@ -250,7 +255,7 @@ internal object SocialRecoveryModal : ModalController {
                         EntryBehaviourEntity.attemptToGetLockedWallet().get()
                 }
             }
-            Loading.hideLoadingCoroutine(scope = this, duration = 100)
+            Loading.hideLoading(duration = 100)
         }
     }
 
@@ -380,12 +385,12 @@ internal interface ModalController {
     fun closeModal()
 }
 
-open class SocialRecoveryModalProps {
-    var onUserCancel: (() -> Unit)? = null
-    var onSuccess: (() -> Unit)? = null
-    var onError: ((AElfException) -> Unit)? = null
-    var onUseGoogleAuthService: (() -> Unit)? = null
-}
+data class SocialRecoveryModalProps(
+    val onUserCancel: () -> Unit = {},
+    val onSuccess: (PortkeyWallet) -> Unit = {},
+    val onError: (AElfException) -> Unit = {},
+    val onUseGoogleAuthService: (onSuccess: (GoogleSignInAccount?) -> Unit) -> Unit
+)
 
 
 @Preview
@@ -396,17 +401,20 @@ internal fun ModalPreview() {
         initDebug(context)
     }
     val props = remember {
-        SocialRecoveryModalProps().apply {
+        SocialRecoveryModalProps(
             onUserCancel = {
                 GLogger.w("onUserCancel")
-            }
+            },
             onSuccess = {
                 GLogger.w("onSuccess")
-            }
+            },
             onError = {
                 GLogger.e("onError", it)
+            },
+            onUseGoogleAuthService = {
+                GLogger.w("onUseGoogleAuthService")
             }
-        }
+        )
     }
     SocialRecoveryModal.callUpModal(props)
     HugeButton(
